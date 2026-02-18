@@ -11,11 +11,34 @@ export type ResolveOptions = {
 };
 
 /**
- * Resolves missing variable values required by the pattern.
+ * Resolves missing variable values required by a parsed pattern.
  *
- * Rule (v1):
- * - Any variable used in the pattern is considered required.
- * - The "type" variable is resolved using a select menu with predefined choices.
+ * The function inspects `parsed.variablesUsed` and ensures each required
+ * variable has a non-empty value in the returned object. If a variable is
+ * missing or contains only whitespace and `opts.prompt` is `true`, the
+ * function will prompt the user for the value. The special variable name
+ * `type` is resolved with a select prompt pre-populated with
+ * {@link TYPE_CHOICES}.
+ *
+ * Behavior summary:
+ * - Any variable present in `parsed.variablesUsed` is considered required.
+ * - If a value exists and is non-empty (after trimming) it is preserved.
+ * - If a value is missing or blank and `opts.prompt` is `false`, an error is
+ *   thrown listing the missing variable.
+ * - If `opts.prompt` is `true`, the function will:
+ *   - use a select prompt for the variable named `type` (choices from
+ *     {@link TYPE_CHOICES});
+ *   - use a text input prompt for any other variable.
+ *
+ * @param parsed - Parsed pattern containing `variablesUsed`.
+ * @param initialValues - Existing values that may satisfy requirements.
+ * @param opts - Options controlling prompting behavior.
+ * @returns A promise resolving to a `RenderValues` object containing all
+ * required variables (original values preserved when present).
+ * @throws When a required variable is missing and `opts.prompt` is false.
+ * @example
+ * const parsed = parsePattern('{type}/{title}');
+ * await resolveMissingValues(parsed, { title: 'Hello' }, { prompt: true });
  */
 export async function resolveMissingValues(
   parsed: ParsedPattern,
