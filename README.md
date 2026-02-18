@@ -1,6 +1,8 @@
-![logo](./logo.svg)
-
 # new-branch
+
+<p align="center">
+  <img src="./logo.svg" width="180" alt="new-branch logo" />
+</p>
 
 A composable CLI to generate and optionally create standardized Git branch names using a pattern + transform pipeline.
 
