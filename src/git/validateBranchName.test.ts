@@ -35,4 +35,3 @@ describe("validateBranchName", () => {
     expect(execa).toHaveBeenCalledWith("git", ["check-ref-format", "--branch", "master///nope"]);
   });
 });
-˜
