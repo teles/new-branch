@@ -119,11 +119,11 @@ Example AST representation:
 
 ## 6. Built-in Variables
 
-| Variable | Description |
-| --- | --- |
-| type | Branch type (feat, fix, etc.) |
-| title | Human-readable task title |
-| id | Task identifier (e.g., STK-123) |
+| Variable | Description                     |
+| -------- | ------------------------------- |
+| type     | Branch type (feat, fix, etc.)   |
+| title    | Human-readable task title       |
+| id       | Task identifier (e.g., STK-123) |
 
 ---
 
@@ -133,29 +133,29 @@ All transforms must be pure functions.
 
 ### 7.1 String Transforms
 
-| Transform | Description |
-| --- | --- |
-| slugify | Converts to URL-safe slug |
-| lowercase | Converts to lowercase |
-| uppercase | Converts to uppercase |
-| trim | Trims whitespace |
-| titlecase | Capitalizes words |
+| Transform | Description               |
+| --------- | ------------------------- |
+| slugify   | Converts to URL-safe slug |
+| lowercase | Converts to lowercase     |
+| uppercase | Converts to uppercase     |
+| trim      | Trims whitespace          |
+| titlecase | Capitalizes words         |
 
 ### 7.2 Argument-based Transforms
 
-| Transform | Description | Example |
-| --- | --- | --- |
-| max | Truncates string to max length | max:25 |
-| pad | Pads string to length | pad:10 |
+| Transform | Description                    | Example |
+| --------- | ------------------------------ | ------- |
+| max       | Truncates string to max length | max:25  |
+| pad       | Pads string to length          | pad:10  |
 
 ### 7.3 Validation Transforms
 
 Validation transforms do not modify a value but throw errors if invalid.
 
-| Transform | Description |
-| --- | --- |
-| required | Ensures value is not empty |
-| match | Validates value via regex |
+| Transform | Description                |
+| --------- | -------------------------- |
+| required  | Ensures value is not empty |
+| match     | Validates value via regex  |
 
 ---
 
@@ -236,10 +236,10 @@ Validation must occur immediately after input.
 
 ## 12. Optional Flags
 
-| Flag | Description |
-| --- | --- |
-| `--create` | Creates branch using `git switch -c` |
-| `--print` | Prints branch name only (default behavior) |
+| Flag       | Description                                |
+| ---------- | ------------------------------------------ |
+| `--create` | Creates branch using `git switch -c`       |
+| `--print`  | Prints branch name only (default behavior) |
 
 ---
 
