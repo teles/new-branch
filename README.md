@@ -11,6 +11,9 @@ A composable CLI to generate and optionally create standardized Git branch names
 
 ![demo](./demo.gif)
 
+[![CI](https://github.com/teles/new-branch/actions/workflows/ci.yml/badge.svg)](https://github.com/teles/new-branch/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/teles/new-branch/branch/main/graph/badge.svg)](https://codecov.io/gh/teles/new-branch)
+
 ---
 
 ## Why
