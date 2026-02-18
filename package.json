@@ -1,6 +1,6 @@
 {
   "name": "new-branch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Generate and create standardized git branch names from a pattern.",
   "keywords": [
     "git",
@@ -25,7 +25,8 @@
     "lint": "eslint src --ext .ts"
   },
   "bin": {
-    "new-branch": "./dist/cli.js"
+    "new-branch": "./dist/cli.js",
+    "git-nb": "./dist/cli.js"
   },
   "author": "Teles <github.com/teles>",
   "license": "MIT",
