@@ -18,8 +18,8 @@
     "start": "node dist/cli.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepack": "pnpm build && pnpm test:run",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "vitest --dir src --exclude **/dist/**",
+    "test:run": "vitest run --dir src --exclude **/dist/**",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint src --ext .ts"
@@ -39,6 +39,9 @@
   },
   "bugs": {
     "url": "https://github.com/teles/new-branch/issues"
+  },
+  "new-branch": {
+    "pattern": "{type}/{title}-{id}"
   },
   "homepage": "https://github.com/teles/new-branch#readme",
   "packageManager": "pnpm@10.22.0",

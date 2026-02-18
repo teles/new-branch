@@ -5,6 +5,7 @@ import { parsePattern } from "@/pattern/parsePattern.js";
 import { defaultTransforms } from "@/pattern/transforms/index.js";
 import { renderPattern } from "@/pattern/transforms/renderPattern.js";
 import { resolveMissingValues } from "@/runtime/resolveMissingValues.js";
+import { loadProjectConfig } from "./config/loadProjectConfig.js";
 import type { RenderValues } from "@/pattern/transforms/renderPattern.js";
 import { sanitizeGitRef } from "@/git/sanitizeGitRef.js";
 import { validateBranchName } from "@/git/validateBranchName.js";
@@ -80,7 +81,9 @@ async function run(): Promise<void> {
   const prompt = args.options.prompt !== false;
 
   // Pipeline: pattern -> AST -> resolve values -> render -> sanitize -> validate -> (optional) git -> output
-  const patternRes = requirePattern(args.options.pattern);
+  const projectConfig = await loadProjectConfig();
+  const resolvedPattern = args.options.pattern ?? projectConfig.pattern;
+  const patternRes = requirePattern(resolvedPattern);
   if (!isOk(patternRes)) fail("Invalid CLI arguments.", patternRes.error);
 
   const astRes = safe(() => parsePattern(patternRes.value));
