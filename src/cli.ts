@@ -70,7 +70,7 @@ type Ctx = {
   branchName: string;
 };
 
-async function run(): Promise<void> {
+export async function run(): Promise<void> {
   // Step 0: args/options
   // Note: CAC prints help, but depending on our parseArgs wrapper we might not
   // expose `help` in `args.options`. We still want to exit early and never
@@ -139,4 +139,8 @@ async function run(): Promise<void> {
   }
 }
 
-run().catch((e) => fail("Unexpected error in CLI.", e));
+// Only execute the CLI automatically when not running tests.
+// In tests, `run` can be imported and called directly.
+if (process.env.NODE_ENV !== "test") {
+  run().catch((e) => fail("Unexpected error in CLI.", e));
+}

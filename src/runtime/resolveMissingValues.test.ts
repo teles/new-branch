@@ -61,7 +61,16 @@ describe("resolveMissingValues", () => {
 
     const out = await resolveMissingValues(parsed, { title: "Some title" }, { prompt: true });
 
-    expect(select).toHaveBeenCalled();
+    expect(select).toHaveBeenCalledTimes(1);
+    expect(select).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Select branch type:",
+        choices: [
+          { name: "Feature", value: "feat" },
+          { name: "Fix", value: "fix" },
+        ],
+      }),
+    );
     expect(out.type).toBe("feat");
   });
 
