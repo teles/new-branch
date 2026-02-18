@@ -4,6 +4,9 @@
   <img src="./logo.svg" width="180" alt="new-branch logo" />
 </p>
 
+> “Explicit is better than implicit.”
+> — The Zen of Python (PEP 20)
+
 A composable CLI to generate and optionally create standardized Git branch names using a pattern + transform pipeline.
 
 ![demo](./demo.gif)
