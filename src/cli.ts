@@ -72,8 +72,14 @@ type Ctx = {
 
 async function run(): Promise<void> {
   // Step 0: args/options
+  // Note: CAC prints help, but depending on our parseArgs wrapper we might not
+  // expose `help` in `args.options`. We still want to exit early and never
+  // require a pattern when the user just asked for help.
+  const argv = process.argv.slice(2);
+  const wantsHelp = argv.includes("--help") || argv.includes("-h");
+
   const args = parseArgs(process.argv);
-  if (args.options.help) {
+  if (wantsHelp) {
     return;
   }
   const quiet = args.options.quiet === true;

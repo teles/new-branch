@@ -1,6 +1,7 @@
-import { input } from "@inquirer/prompts";
+import { input, select } from "@inquirer/prompts";
 import type { ParsedPattern } from "@/pattern/types.js";
 import type { RenderValues } from "@/pattern/transforms/renderPattern.js";
+import { TYPE_CHOICES } from "@/runtime/enums.js";
 
 export type ResolveOptions = {
   /**
@@ -14,6 +15,7 @@ export type ResolveOptions = {
  *
  * Rule (v1):
  * - Any variable used in the pattern is considered required.
+ * - The "type" variable is resolved using a select menu with predefined choices.
  */
 export async function resolveMissingValues(
   parsed: ParsedPattern,
@@ -25,10 +27,22 @@ export async function resolveMissingValues(
   const values: RenderValues = { ...initialValues };
 
   for (const name of requiredVars) {
-    if (values[name]) continue;
+    const current = values[name];
+
+    if (current && current.trim() !== "") continue;
 
     if (!opts.prompt) {
       throw new Error(`Missing required value: "${name}"`);
+    }
+
+    if (name === "type") {
+      const selected = await select({
+        message: "Select branch type:",
+        choices: TYPE_CHOICES,
+      });
+
+      values[name] = selected;
+      continue;
     }
 
     const answer = await input({
