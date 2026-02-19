@@ -6,6 +6,7 @@ import { defaultTransforms } from "@/pattern/transforms/index.js";
 import { renderPattern } from "@/pattern/transforms/renderPattern.js";
 import { resolveMissingValues } from "@/runtime/resolveMissingValues.js";
 import { loadProjectConfig } from "./config/loadProjectConfig.js";
+import { getGitConfig } from "@/git/gitConfig.js";
 import type { RenderValues } from "@/pattern/transforms/renderPattern.js";
 import { sanitizeGitRef } from "@/git/sanitizeGitRef.js";
 import { validateBranchName } from "@/git/validateBranchName.js";
@@ -88,7 +89,15 @@ export async function run(): Promise<void> {
 
   // Pipeline: pattern -> AST -> resolve values -> render -> sanitize -> validate -> (optional) git -> output
   const projectConfig = await loadProjectConfig();
-  const resolvedPattern = args.options.pattern ?? projectConfig.pattern;
+
+  // Git config (respects local -> global precedence automatically)
+  let gitPattern: string | undefined;
+
+  if (!args.options.pattern && !projectConfig.pattern) {
+    gitPattern = await getGitConfig("new-branch.pattern");
+  }
+
+  const resolvedPattern = args.options.pattern ?? projectConfig.pattern ?? gitPattern;
   const patternRes = requirePattern(resolvedPattern);
   if (!isOk(patternRes)) fail("Invalid CLI arguments.", patternRes.error);
 
