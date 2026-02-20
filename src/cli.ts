@@ -5,6 +5,7 @@ import { parsePattern } from "@/pattern/parsePattern.js";
 import { defaultTransforms } from "@/pattern/transforms/index.js";
 import { renderPattern } from "@/pattern/transforms/renderPattern.js";
 import { resolveMissingValues } from "@/runtime/resolveMissingValues.js";
+import { getBuiltinValues } from "@/runtime/builtins.js";
 import { loadProjectConfig } from "./config/loadProjectConfig.js";
 import { getGitConfig } from "@/git/gitConfig.js";
 import type { RenderValues } from "@/pattern/transforms/renderPattern.js";
@@ -104,7 +105,12 @@ export async function run(): Promise<void> {
   const astRes = safe(() => parsePattern(patternRes.value));
   if (!isOk(astRes)) fail("Invalid pattern.", astRes.error);
 
-  const initialValues = toInitialValues(args);
+  const builtinValues = getBuiltinValues();
+
+  const initialValues = {
+    ...builtinValues,
+    ...toInitialValues(args),
+  };
 
   const valuesRes = await safeAsync(() =>
     resolveMissingValues(astRes.value, initialValues, {
