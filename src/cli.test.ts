@@ -12,6 +12,11 @@ vi.mock("./config/loadProjectConfig.js", () => ({
   loadProjectConfig: (...args: unknown[]) => loadProjectConfigMock(...args),
 }));
 
+const getGitConfigMock = vi.fn();
+vi.mock("@/git/gitConfig.js", () => ({
+  getGitConfig: (...args: unknown[]) => getGitConfigMock(...args),
+}));
+
 const resolveMissingValuesMock = vi.fn();
 vi.mock("@/runtime/resolveMissingValues.js", () => ({
   resolveMissingValues: (...args: unknown[]) => resolveMissingValuesMock(...args),
@@ -85,6 +90,8 @@ describe("cli.ts (run)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    getGitConfigMock.mockResolvedValue(undefined);
+
     // Keep tests deterministic
     process.env.NODE_ENV = "test";
 
@@ -130,6 +137,7 @@ describe("cli.ts (run)", () => {
     await expect(run()).resolves.toBeUndefined();
 
     expect(loadProjectConfigMock).not.toHaveBeenCalled();
+    expect(getGitConfigMock).not.toHaveBeenCalled();
     expect(parsePatternMock).not.toHaveBeenCalled();
     expect(resolveMissingValuesMock).not.toHaveBeenCalled();
     expect(renderPatternMock).not.toHaveBeenCalled();
@@ -158,6 +166,7 @@ describe("cli.ts (run)", () => {
     await run();
 
     expect(loadProjectConfigMock).toHaveBeenCalledTimes(1);
+    expect(getGitConfigMock).not.toHaveBeenCalled();
     expect(parsePatternMock).toHaveBeenCalledWith("{type}/{title}-{id}");
     expect(renderPatternMock).toHaveBeenCalledTimes(1);
     expect(sanitizeGitRefMock).toHaveBeenCalledWith("feat/my-task-STK-1");
@@ -165,6 +174,36 @@ describe("cli.ts (run)", () => {
     expect(createBranchMock).not.toHaveBeenCalled();
 
     expect(logSpy).toHaveBeenCalledWith("feat/my-task-STK-1");
+  });
+
+  it("uses package.json pattern when CLI --pattern is missing, even if git config has a pattern", async () => {
+    setArgv(["--id", "STK-1", "--title", "My task", "--type", "feat"]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({ options: { id: "STK-1", title: "My task", type: "feat" } }),
+    );
+
+    loadProjectConfigMock.mockResolvedValue({ pattern: "{type}/{title}-{id}" });
+    getGitConfigMock.mockResolvedValue("{id}-{title}");
+
+    await run();
+
+    expect(parsePatternMock).toHaveBeenCalledWith("{type}/{title}-{id}");
+  });
+
+  it("falls back to git config pattern when CLI and package.json are missing", async () => {
+    setArgv(["--id", "STK-1", "--title", "My task", "--type", "feat"]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({ options: { id: "STK-1", title: "My task", type: "feat" } }),
+    );
+
+    loadProjectConfigMock.mockResolvedValue({ pattern: undefined });
+    getGitConfigMock.mockResolvedValue("{type}/{title}-{id}");
+
+    await run();
+
+    expect(parsePatternMock).toHaveBeenCalledWith("{type}/{title}-{id}");
   });
 
   it("when --create is set, calls createBranch and prints success message", async () => {
@@ -231,10 +270,11 @@ describe("cli.ts (run)", () => {
     expect(logSpy).not.toHaveBeenCalled();
   });
 
-  it("fails when no pattern is provided (neither CLI nor package.json)", async () => {
+  it("fails when no pattern is provided (neither CLI, package.json, nor git config)", async () => {
     setArgv([]);
 
     loadProjectConfigMock.mockResolvedValue({ pattern: undefined });
+    getGitConfigMock.mockResolvedValue(undefined);
     parseArgsMock.mockReturnValue(defaultParseArgsReturn({ options: { pattern: undefined } }));
 
     await expect(run()).rejects.toThrow(/process\.exit:1/);
