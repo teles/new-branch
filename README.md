@@ -88,9 +88,19 @@ Example:
 
 ## Built-in Variables
 
+### Core Variables
+
 - `type`
 - `title`
 - `id`
+
+### Date Built-ins (derived from local system time)
+
+- `year` → YYYY
+- `month` → MM (zero padded)
+- `day` → DD (zero padded)
+- `date` → YYYY-MM-DD
+- `dateCompact` → YYYYMMDD
 
 ---
 
@@ -150,11 +160,36 @@ You can define a default pattern in `package.json`:
 }
 ```
 
-Resolution order:
+### Git Configuration
+
+You can also define a default pattern using Git config:
+
+```bash
+git config --local new-branch.pattern "{type}/{title:slugify}-{id}"
+```
+
+Or globally:
+
+```bash
+git config --global new-branch.pattern "{type}/{title:slugify}-{id}"
+```
+
+To remove the pattern from Git config:
+
+```bash
+# Remove from local repository
+git config --unset --local new-branch.pattern
+
+# Remove from global config
+git config --unset --global new-branch.pattern
+```
+
+When using Git config, the resolution order becomes:
 
 1. CLI flags
 2. `package.json` configuration
-3. Interactive prompt (if enabled)
+3. Git config (`new-branch.pattern`)
+4. Interactive prompt (if enabled)
 
 ---
 
