@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/teles/new-branch/compare/v0.4.0...v0.5.0) (2026-02-21)
+
+
+### Features
+
+* **git:** add git built-in variables with lazy resolution and CLI integration ([#9](https://github.com/teles/new-branch/issues/9)) ([1ded20b](https://github.com/teles/new-branch/commit/1ded20b2374396d4623efc27a102f47c5186acc4))
+
 # [0.4.0](https://github.com/teles/new-branch/compare/v0.3.1...v0.4.0) (2026-02-21)
 
 
