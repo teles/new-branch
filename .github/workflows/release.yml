@@ -8,31 +8,48 @@ permissions:
     contents: write
     issues: write
     pull-requests: write
+    id-token: write
 
 jobs:
     release:
         runs-on: ubuntu-latest
+
         steps:
-            - uses: actions/checkout@v4
+            - name: Checkout
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
 
-            - uses: pnpm/action-setup@v4
+            - name: Setup Node
+              uses: actions/setup-node@v4
               with:
-                  version: 10
-
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 22
-                  registry-url: https://registry.npmjs.org/
+                  node-version: 22.14.0
                   cache: pnpm
 
-            - run: pnpm install --frozen-lockfile
-            - run: pnpm test:coverage
-            - run: pnpm build
+            - name: Upgrade npm CLI (required for Trusted Publishing)
+              run: npm i -g npm@11.5.1
 
+            # Use the pnpm version declared in package.json#packageManager via Corepack
+            - name: Enable Corepack
+              run: corepack enable
+
+            # Pin pnpm to a known-good version (adjust if you bump packageManager)
+            - name: Activate pnpm
+              run: corepack prepare pnpm@10.22.0 --activate
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Test
+              run: pnpm test:coverage
+
+            - name: Build
+              run: pnpm build
+
+            # Publish + GitHub release via semantic-release
             - name: Release
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  NPM_CONFIG_PROVENANCE: true
+                  NPM_CONFIG_ACCESS: public
               run: pnpm semantic-release
