@@ -1,66 +1,72 @@
 name: Release
 
 on:
-    push:
-        branches: [main]
+  push:
+    branches: [main]
+
+# Prevent two release runs from racing each other (e.g., double-push / re-run)
+concurrency:
+  group: release-main
+  cancel-in-progress: false
 
 permissions:
-    contents: write
-    issues: write
-    pull-requests: write
-    id-token: write
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
 
 jobs:
-    release:
-        runs-on: ubuntu-latest
+  release:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-            - name: Setup Node
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 22.14.0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
 
-            - name: Upgrade npm CLI (required for Trusted Publishing)
-              run: npm i -g npm@11.5.1
+      # npm >= 9 supports provenance; keeping this to avoid runner/npm drift
+      - name: Upgrade npm CLI (Trusted Publishing / provenance)
+        run: npm i -g npm@11.5.1
 
-            # Use the pnpm version declared in package.json#packageManager via Corepack
-            - name: Enable Corepack
-              run: corepack enable
+      # Use pnpm via Corepack
+      - name: Enable Corepack
+        run: corepack enable
 
-            # Pin pnpm to a known-good version (adjust if you bump packageManager)
-            - name: Activate pnpm
-              run: corepack prepare pnpm@10.22.0 --activate
+      - name: Activate pnpm
+        run: corepack prepare pnpm@10.22.0 --activate
 
-            - name: Get pnpm store path
-              id: pnpm-store
-              run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
 
-            - name: Cache pnpm store
-              uses: actions/cache@v4
-              with:
-                  path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
-                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
-                  restore-keys: |
-                      ${{ runner.os }}-pnpm-store-
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-            - name: Test
-              run: pnpm test:coverage
+      - name: Test
+        run: pnpm test:coverage
 
-            - name: Build
-              run: pnpm build
+      - name: Build
+        run: pnpm build
 
-            # Publish + GitHub release via semantic-release
-            - name: Release
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  NPM_CONFIG_PROVENANCE: true
-                  NPM_CONFIG_ACCESS: public
-              run: pnpm semantic-release
+      # Publish + GitHub release via semantic-release (OIDC Trusted Publishing)
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+          NPM_CONFIG_PROVENANCE: true
+          NPM_CONFIG_ACCESS: public
+        run: pnpm semantic-release

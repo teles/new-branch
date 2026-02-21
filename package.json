@@ -26,8 +26,9 @@
     "lint": "eslint src --ext .ts"
   },
   "bin": {
-    "new-branch": "./dist/cli.js",
-    "git-nb": "./dist/cli.js"
+    "new-branch": "dist/cli.js",
+    "git-new-branch": "dist/cli.js",
+    "git-nb": "dist/cli.js"
   },
   "author": "Teles <github.com/teles>",
   "license": "MIT",
