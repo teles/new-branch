@@ -24,7 +24,6 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 22.14.0
-                  cache: pnpm
 
             - name: Upgrade npm CLI (required for Trusted Publishing)
               run: npm i -g npm@11.5.1
@@ -36,6 +35,18 @@ jobs:
             # Pin pnpm to a known-good version (adjust if you bump packageManager)
             - name: Activate pnpm
               run: corepack prepare pnpm@10.22.0 --activate
+
+            - name: Get pnpm store path
+              id: pnpm-store
+              run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+            - name: Cache pnpm store
+              uses: actions/cache@v4
+              with:
+                  path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-pnpm-store-
 
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
