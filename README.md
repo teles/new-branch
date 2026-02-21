@@ -102,6 +102,35 @@ Example:
 - `date` → YYYY-MM-DD
 - `dateCompact` → YYYYMMDD
 
+### Git Built-ins (derived from current Git repository)
+
+- `currentBranch` → Current Git branch name (e.g. `main`, `feature/PROJ-123`)
+- `shortSha` → Short SHA of `HEAD` (e.g. `a1b2c3d`)
+- `repoName` → Repository directory name
+- `userName` → Git user name (`git config user.name`)
+- `lastTag` → Most recent Git tag (`git describe --tags --abbrev=0`)
+
+> Note:
+>
+> - Git built-ins are resolved lazily and only when referenced in the pattern.
+> - They are never prompted interactively.
+> - When unavailable (e.g. outside a Git repository), they resolve to an empty string.
+
+#### Example with Git built-ins
+
+```bash
+new-branch \
+  --pattern "{currentBranch}-{shortSha}-{type}-{title:slugify}" \
+  --type feat \
+  --title "Improve logging"
+```
+
+Example output:
+
+```
+main-a1b2c3d-feat-improve-logging
+```
+
 ---
 
 ## Built-in Transforms
