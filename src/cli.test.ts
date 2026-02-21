@@ -17,6 +17,11 @@ vi.mock("@/git/gitConfig.js", () => ({
   getGitConfig: (...args: unknown[]) => getGitConfigMock(...args),
 }));
 
+const getBuiltinValuesMock = vi.fn();
+vi.mock("@/runtime/builtins.js", () => ({
+  getBuiltinValues: (...args: unknown[]) => getBuiltinValuesMock(...args),
+}));
+
 const resolveMissingValuesMock = vi.fn();
 vi.mock("@/runtime/resolveMissingValues.js", () => ({
   resolveMissingValues: (...args: unknown[]) => resolveMissingValuesMock(...args),
@@ -50,6 +55,16 @@ vi.mock("@/git/validateBranchName.js", () => ({
 const createBranchMock = vi.fn();
 vi.mock("@/git/createBranch.js", () => ({
   createBranch: (...args: unknown[]) => createBranchMock(...args),
+}));
+
+const patternNeedsGitBuiltinsMock = vi.fn();
+const extractGitBuiltinKeysFromPatternMock = vi.fn();
+const getGitBuiltinsMock = vi.fn();
+vi.mock("@/git/gitBuiltins.js", () => ({
+  patternNeedsGitBuiltins: (...args: unknown[]) => patternNeedsGitBuiltinsMock(...args),
+  extractGitBuiltinKeysFromPattern: (...args: unknown[]) =>
+    extractGitBuiltinKeysFromPatternMock(...args),
+  getGitBuiltins: (...args: unknown[]) => getGitBuiltinsMock(...args),
 }));
 
 // Now we can import run (after mocks)
@@ -91,6 +106,12 @@ describe("cli.ts (run)", () => {
     vi.clearAllMocks();
 
     getGitConfigMock.mockResolvedValue(undefined);
+
+    getBuiltinValuesMock.mockReturnValue({ day: "01", month: "02", year: "2026" });
+
+    patternNeedsGitBuiltinsMock.mockReturnValue(false);
+    extractGitBuiltinKeysFromPatternMock.mockReturnValue([]);
+    getGitBuiltinsMock.mockResolvedValue({});
 
     // Keep tests deterministic
     process.env.NODE_ENV = "test";
@@ -138,6 +159,10 @@ describe("cli.ts (run)", () => {
 
     expect(loadProjectConfigMock).not.toHaveBeenCalled();
     expect(getGitConfigMock).not.toHaveBeenCalled();
+    expect(getBuiltinValuesMock).not.toHaveBeenCalled();
+    expect(patternNeedsGitBuiltinsMock).not.toHaveBeenCalled();
+    expect(extractGitBuiltinKeysFromPatternMock).not.toHaveBeenCalled();
+    expect(getGitBuiltinsMock).not.toHaveBeenCalled();
     expect(parsePatternMock).not.toHaveBeenCalled();
     expect(resolveMissingValuesMock).not.toHaveBeenCalled();
     expect(renderPatternMock).not.toHaveBeenCalled();
@@ -167,6 +192,10 @@ describe("cli.ts (run)", () => {
 
     expect(loadProjectConfigMock).toHaveBeenCalledTimes(1);
     expect(getGitConfigMock).not.toHaveBeenCalled();
+    expect(getBuiltinValuesMock).toHaveBeenCalledTimes(1);
+    expect(patternNeedsGitBuiltinsMock).toHaveBeenCalledWith("{type}/{title}-{id}");
+    expect(extractGitBuiltinKeysFromPatternMock).not.toHaveBeenCalled();
+    expect(getGitBuiltinsMock).not.toHaveBeenCalled();
     expect(parsePatternMock).toHaveBeenCalledWith("{type}/{title}-{id}");
     expect(renderPatternMock).toHaveBeenCalledTimes(1);
     expect(sanitizeGitRefMock).toHaveBeenCalledWith("feat/my-task-STK-1");
@@ -174,6 +203,50 @@ describe("cli.ts (run)", () => {
     expect(createBranchMock).not.toHaveBeenCalled();
 
     expect(logSpy).toHaveBeenCalledWith("feat/my-task-STK-1");
+  });
+
+  it("resolves git builtins only when the pattern references them (and only requested keys)", async () => {
+    setArgv(["--pattern", "{currentBranch}-{shortSha}-{id}", "--id", "STK-1", "--type", "feat"]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: { pattern: "{currentBranch}-{shortSha}-{id}", id: "STK-1", type: "feat" },
+      }),
+    );
+
+    patternNeedsGitBuiltinsMock.mockReturnValue(true);
+    extractGitBuiltinKeysFromPatternMock.mockReturnValue(["currentBranch", "shortSha"]);
+    getGitBuiltinsMock.mockResolvedValue({ currentBranch: "main", shortSha: "abc123" });
+
+    // Pattern variables used include git builtins so resolveMissingValues should NOT prompt for them
+    parsePatternMock.mockReturnValue({
+      nodes: [],
+      variablesUsed: ["currentBranch", "shortSha", "id"],
+    });
+
+    resolveMissingValuesMock.mockImplementation(async (_ast: unknown, initial: unknown) => {
+      return initial as unknown;
+    });
+
+    renderPatternMock.mockReturnValue("main-abc123-STK-1");
+
+    await run();
+
+    expect(getBuiltinValuesMock).toHaveBeenCalledTimes(1);
+    expect(patternNeedsGitBuiltinsMock).toHaveBeenCalledWith("{currentBranch}-{shortSha}-{id}");
+    expect(extractGitBuiltinKeysFromPatternMock).toHaveBeenCalledWith(
+      "{currentBranch}-{shortSha}-{id}",
+    );
+    expect(getGitBuiltinsMock).toHaveBeenCalledWith(["currentBranch", "shortSha"]);
+
+    // Ensure resolveMissingValues received the git + runtime + cli values merged
+    const call = resolveMissingValuesMock.mock.calls[0];
+    const passedInitial = call?.[1] as Record<string, unknown>;
+    expect(passedInitial.currentBranch).toBe("main");
+    expect(passedInitial.shortSha).toBe("abc123");
+    expect(passedInitial.id).toBe("STK-1");
+
+    expect(logSpy).toHaveBeenCalledWith("main-abc123-STK-1");
   });
 
   it("uses package.json pattern when CLI --pattern is missing, even if git config has a pattern", async () => {
@@ -189,6 +262,7 @@ describe("cli.ts (run)", () => {
     await run();
 
     expect(parsePatternMock).toHaveBeenCalledWith("{type}/{title}-{id}");
+    expect(patternNeedsGitBuiltinsMock).toHaveBeenCalledWith("{type}/{title}-{id}");
   });
 
   it("falls back to git config pattern when CLI and package.json are missing", async () => {
@@ -204,6 +278,7 @@ describe("cli.ts (run)", () => {
     await run();
 
     expect(parsePatternMock).toHaveBeenCalledWith("{type}/{title}-{id}");
+    expect(patternNeedsGitBuiltinsMock).toHaveBeenCalledWith("{type}/{title}-{id}");
   });
 
   it("when --create is set, calls createBranch and prints success message", async () => {
@@ -283,6 +358,8 @@ describe("cli.ts (run)", () => {
     expect(errorSpy.mock.calls.map((c) => c.join(" ")).join("\n")).toMatch(
       /Invalid CLI arguments/i,
     );
+    expect(getBuiltinValuesMock).not.toHaveBeenCalled();
+    expect(getGitBuiltinsMock).not.toHaveBeenCalled();
   });
 
   it("fails on invalid pattern (parsePattern throws)", async () => {
@@ -299,6 +376,8 @@ describe("cli.ts (run)", () => {
 
     expect(errorSpy).toHaveBeenCalled();
     expect(errorSpy.mock.calls.map((c) => c.join(" ")).join("\n")).toMatch(/Invalid pattern/i);
+    expect(getBuiltinValuesMock).not.toHaveBeenCalled();
+    expect(getGitBuiltinsMock).not.toHaveBeenCalled();
   });
 
   it("fails if validateBranchName rejects", async () => {

@@ -8,6 +8,11 @@ import { resolveMissingValues } from "@/runtime/resolveMissingValues.js";
 import { getBuiltinValues } from "@/runtime/builtins.js";
 import { loadProjectConfig } from "./config/loadProjectConfig.js";
 import { getGitConfig } from "@/git/gitConfig.js";
+import {
+  extractGitBuiltinKeysFromPattern,
+  getGitBuiltins,
+  patternNeedsGitBuiltins,
+} from "@/git/gitBuiltins.js";
 import type { RenderValues } from "@/pattern/transforms/renderPattern.js";
 import { sanitizeGitRef } from "@/git/sanitizeGitRef.js";
 import { validateBranchName } from "@/git/validateBranchName.js";
@@ -105,10 +110,24 @@ export async function run(): Promise<void> {
   const astRes = safe(() => parsePattern(patternRes.value));
   if (!isOk(astRes)) fail("Invalid pattern.", astRes.error);
 
+  // Runtime built-ins (date, etc.)
   const builtinValues = getBuiltinValues();
 
-  const initialValues = {
+  // Git built-ins (only if the pattern references them)
+  let gitValues: RenderValues = {};
+  if (patternNeedsGitBuiltins(patternRes.value)) {
+    const gitKeys = extractGitBuiltinKeysFromPattern(patternRes.value);
+
+    const gitRes = await safeAsync(() => getGitBuiltins(gitKeys));
+    if (!isOk(gitRes)) fail("Failed to resolve git builtins.", gitRes.error);
+
+    // GitBuiltins is compatible with RenderValues (string | undefined)
+    gitValues = gitRes.value as RenderValues;
+  }
+
+  const initialValues: RenderValues = {
     ...builtinValues,
+    ...gitValues,
     ...toInitialValues(args),
   };
 
