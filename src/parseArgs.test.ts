@@ -136,4 +136,47 @@ describe("parseArgs", () => {
     expect(res.options.listTransforms).toBe(true);
     expect(res.options.printConfig).toBe(true);
   });
+
+  it("parses --max-length as a number", () => {
+    const argv = ["node", "cli", "--max-length", "60"] as const;
+
+    const res = parseArgs(argv);
+
+    expect(res.options.maxLength).toBe(60);
+  });
+
+  it("parses short -L as --max-length", () => {
+    const argv = ["node", "cli", "-L", "30"] as const;
+
+    const res = parseArgs(argv);
+
+    expect(res.options.maxLength).toBe(30);
+  });
+
+  it("returns undefined for --max-length when not provided", () => {
+    const argv = ["node", "cli", "--pattern", "{type}/{id}"] as const;
+
+    const res = parseArgs(argv);
+
+    expect(res.options.maxLength).toBeUndefined();
+  });
+
+  it("parses --max-length alongside other options", () => {
+    const argv = [
+      "node",
+      "cli",
+      "--pattern",
+      "{type}/{title}-{id}",
+      "--max-length",
+      "50",
+      "--id",
+      "STK-1",
+    ] as const;
+
+    const res = parseArgs(argv);
+
+    expect(res.options.maxLength).toBe(50);
+    expect(res.options.pattern).toBe("{type}/{title}-{id}");
+    expect(res.options.id).toBe("STK-1");
+  });
 });

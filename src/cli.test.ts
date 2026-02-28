@@ -62,6 +62,11 @@ vi.mock("@/git/sanitizeGitRef.js", () => ({
   sanitizeGitRef: (...args: unknown[]) => sanitizeGitRefMock(...args),
 }));
 
+const truncateEndMock = vi.fn();
+vi.mock("@/git/truncateEnd.js", () => ({
+  truncateEnd: (...args: unknown[]) => truncateEndMock(...args),
+}));
+
 const validateBranchNameMock = vi.fn();
 vi.mock("@/git/validateBranchName.js", () => ({
   validateBranchName: (...args: unknown[]) => validateBranchNameMock(...args),
@@ -149,6 +154,7 @@ describe("cli.ts (run)", () => {
 
     renderPatternMock.mockReturnValue("feat/my-task-STK-1");
     sanitizeGitRefMock.mockImplementation((s: string) => s);
+    truncateEndMock.mockImplementation((s: string) => s);
 
     validateBranchNameMock.mockResolvedValue(undefined);
     createBranchMock.mockResolvedValue(undefined);
@@ -611,5 +617,267 @@ describe("cli.ts (run)", () => {
 
     expect(getGitConfigMock).not.toHaveBeenCalled();
     expect(parsePatternMock).toHaveBeenCalledWith("hotfix/{id}-{title:kebab}");
+  });
+
+  // ---- --max-length option tests ----
+
+  it("applies --max-length truncation when branch name exceeds limit", async () => {
+    setArgv([
+      "--pattern",
+      "{type}/{title}-{id}",
+      "--max-length",
+      "10",
+      "--id",
+      "STK-1",
+      "--title",
+      "My task",
+      "--type",
+      "feat",
+    ]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: {
+          pattern: "{type}/{title}-{id}",
+          maxLength: 10,
+          id: "STK-1",
+          title: "My task",
+          type: "feat",
+        },
+      }),
+    );
+
+    renderPatternMock.mockReturnValue("feat/my-task-STK-1");
+    sanitizeGitRefMock.mockImplementation((s: string) => s);
+    truncateEndMock.mockReturnValue("feat/my-ta");
+
+    await run();
+
+    expect(truncateEndMock).toHaveBeenCalledWith("feat/my-task-STK-1", 10);
+    expect(validateBranchNameMock).toHaveBeenCalledWith("feat/my-ta");
+    expect(logSpy).toHaveBeenCalledWith("feat/my-ta");
+  });
+
+  it("does not call truncateEnd when --max-length is not provided", async () => {
+    setArgv([
+      "--pattern",
+      "{type}/{title}-{id}",
+      "--id",
+      "STK-1",
+      "--title",
+      "My task",
+      "--type",
+      "feat",
+    ]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: {
+          pattern: "{type}/{title}-{id}",
+          id: "STK-1",
+          title: "My task",
+          type: "feat",
+        },
+      }),
+    );
+
+    await run();
+
+    expect(truncateEndMock).not.toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith("feat/my-task-STK-1");
+  });
+
+  it("fails with clear error when --max-length is invalid (truncateEnd throws)", async () => {
+    setArgv([
+      "--pattern",
+      "{type}/{title}-{id}",
+      "--max-length",
+      "0",
+      "--id",
+      "STK-1",
+      "--title",
+      "My task",
+      "--type",
+      "feat",
+    ]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: {
+          pattern: "{type}/{title}-{id}",
+          maxLength: 0,
+          id: "STK-1",
+          title: "My task",
+          type: "feat",
+        },
+      }),
+    );
+
+    truncateEndMock.mockImplementation(() => {
+      throw new Error('--max-length must be a positive integer (>= 1), got "0".');
+    });
+
+    await expect(run()).rejects.toThrow(/process\.exit:1/);
+
+    expect(errorSpy).toHaveBeenCalled();
+    expect(errorSpy.mock.calls.map((c) => c.join(" ")).join("\n")).toMatch(
+      /Invalid --max-length value/i,
+    );
+  });
+
+  it("--max-length with --create truncates before creating branch", async () => {
+    setArgv([
+      "--pattern",
+      "{type}/{title}-{id}",
+      "--max-length",
+      "15",
+      "--create",
+      "--id",
+      "STK-1",
+      "--title",
+      "My task",
+      "--type",
+      "feat",
+    ]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: {
+          pattern: "{type}/{title}-{id}",
+          maxLength: 15,
+          create: true,
+          id: "STK-1",
+          title: "My task",
+          type: "feat",
+        },
+      }),
+    );
+
+    renderPatternMock.mockReturnValue("feat/my-task-STK-1");
+    sanitizeGitRefMock.mockImplementation((s: string) => s);
+    truncateEndMock.mockReturnValue("feat/my-task-ST");
+
+    await run();
+
+    expect(truncateEndMock).toHaveBeenCalledWith("feat/my-task-STK-1", 15);
+    expect(createBranchMock).toHaveBeenCalledWith("feat/my-task-ST");
+    expect(logSpy).toHaveBeenCalledWith("\n✅ Branch created and switched to: feat/my-task-ST");
+  });
+
+  it("--max-length does not truncate when branch name is within limit", async () => {
+    setArgv([
+      "--pattern",
+      "{type}/{title}-{id}",
+      "--max-length",
+      "100",
+      "--id",
+      "STK-1",
+      "--title",
+      "My task",
+      "--type",
+      "feat",
+    ]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: {
+          pattern: "{type}/{title}-{id}",
+          maxLength: 100,
+          id: "STK-1",
+          title: "My task",
+          type: "feat",
+        },
+      }),
+    );
+
+    renderPatternMock.mockReturnValue("feat/my-task-STK-1");
+    sanitizeGitRefMock.mockImplementation((s: string) => s);
+    truncateEndMock.mockImplementation((s: string) => s);
+
+    await run();
+
+    expect(truncateEndMock).toHaveBeenCalledWith("feat/my-task-STK-1", 100);
+    expect(logSpy).toHaveBeenCalledWith("feat/my-task-STK-1");
+  });
+
+  it("--explain with --max-length passes maxLength and truncated to explain()", async () => {
+    setArgv([
+      "--pattern",
+      "{type}/{title}-{id}",
+      "--max-length",
+      "10",
+      "--explain",
+      "--id",
+      "STK-1",
+      "--title",
+      "My task",
+      "--type",
+      "feat",
+    ]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: {
+          pattern: "{type}/{title}-{id}",
+          maxLength: 10,
+          explain: true,
+          id: "STK-1",
+          title: "My task",
+          type: "feat",
+        },
+      }),
+    );
+
+    renderPatternMock.mockReturnValue("feat/my-task-STK-1");
+    sanitizeGitRefMock.mockImplementation((s: string) => s);
+    truncateEndMock.mockReturnValue("feat/my-ta");
+
+    await run();
+
+    expect(truncateEndMock).toHaveBeenCalledWith("feat/my-task-STK-1", 10);
+    expect(explainMock).toHaveBeenCalledTimes(1);
+    const explainCall = explainMock.mock.calls[0][0];
+    expect(explainCall.maxLength).toBe(10);
+    expect(explainCall.truncated).toBe("feat/my-ta");
+    expect(explainCall.sanitized).toBe("feat/my-task-STK-1");
+    // Should not call validateBranchName in explain mode
+    expect(validateBranchNameMock).not.toHaveBeenCalled();
+  });
+
+  it("--explain without --max-length passes undefined maxLength to explain()", async () => {
+    setArgv([
+      "--pattern",
+      "{type}/{title}-{id}",
+      "--explain",
+      "--id",
+      "STK-1",
+      "--title",
+      "My task",
+      "--type",
+      "feat",
+    ]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: {
+          pattern: "{type}/{title}-{id}",
+          explain: true,
+          id: "STK-1",
+          title: "My task",
+          type: "feat",
+        },
+      }),
+    );
+
+    renderPatternMock.mockReturnValue("feat/my-task-STK-1");
+    sanitizeGitRefMock.mockImplementation((s: string) => s);
+
+    await run();
+
+    expect(truncateEndMock).not.toHaveBeenCalled();
+    expect(explainMock).toHaveBeenCalledTimes(1);
+    const explainCall = explainMock.mock.calls[0][0];
+    expect(explainCall.maxLength).toBeUndefined();
+    expect(explainCall.truncated).toBe("feat/my-task-STK-1");
   });
 });

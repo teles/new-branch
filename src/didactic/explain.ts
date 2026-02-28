@@ -2,6 +2,9 @@ import type { ParsedPattern } from "@/pattern/types.js";
 import type { RenderValues } from "@/pattern/transforms/renderPattern.js";
 import type { TransformRegistry } from "@/pattern/transforms/types.js";
 
+/**
+ * Input data required by {@link explain} to produce a pipeline breakdown.
+ */
 export type ExplainInput = {
   /** The raw pattern string. */
   pattern: string;
@@ -21,15 +24,35 @@ export type ExplainInput = {
   rendered: string;
   /** The final sanitized branch name. */
   sanitized: string;
+  /** The maximum branch name length (if --max-length was set). */
+  maxLength?: number;
+  /** The branch name after truncation (if --max-length was set). */
+  truncated?: string;
   /** The transform registry used for rendering. */
   transforms: TransformRegistry;
 };
 
 /**
- * Produces a structured breakdown of the full branch-name pipeline.
+ * Produces a structured, human-readable breakdown of the full
+ * branch-name pipeline.
  *
+ * @remarks
  * No branch is created — this is purely informational.
  * Used by the `--explain` CLI flag.
+ *
+ * Sections printed:
+ * 1. Pattern and source
+ * 2. Variables used
+ * 3. Builtin values
+ * 4. Git values
+ * 5. CLI values
+ * 6. Transform chain with intermediate values
+ * 7. Rendered / Sanitized output
+ * 8. Max-length truncation (when applicable)
+ * 9. Final branch name
+ *
+ * @param input - The collected pipeline data.
+ * @returns A multi-line string ready to be printed to stdout.
  */
 export function explain(input: ExplainInput): string {
   const lines: string[] = [];
@@ -98,7 +121,19 @@ export function explain(input: ExplainInput): string {
   if (input.rendered !== input.sanitized) {
     lines.push(`  Sanitized:      ${input.sanitized}`);
   }
-  lines.push(`\n  Final branch:   ${input.sanitized}`);
+
+  // 8. Max-length truncation
+  if (input.maxLength !== undefined) {
+    lines.push(`  Max length:     ${input.maxLength}`);
+    if (input.truncated !== undefined && input.truncated !== input.sanitized) {
+      lines.push(`  Truncated:      ${input.truncated}`);
+    } else {
+      lines.push(`  Truncated:      (no truncation needed)`);
+    }
+  }
+
+  const finalName = input.truncated ?? input.sanitized;
+  lines.push(`\n  Final branch:   ${finalName}`);
 
   return lines.join("\n");
 }

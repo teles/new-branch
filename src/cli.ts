@@ -1,5 +1,16 @@
 #!/usr/bin/env node
 
+/**
+ * @module cli
+ *
+ * Entry point for the `new-branch` CLI.
+ *
+ * @remarks
+ * This module orchestrates the full branch-name pipeline:
+ * pattern → AST → resolve values → render → sanitize →
+ * truncate → validate → (optional) git create → output.
+ */
+
 import { parseArgs } from "@/parseArgs.js";
 import { parsePattern } from "@/pattern/parsePattern.js";
 import { allTransforms, defaultTransforms } from "@/pattern/transforms/index.js";
@@ -15,6 +26,7 @@ import {
 } from "@/git/gitBuiltins.js";
 import type { RenderValues } from "@/pattern/transforms/renderPattern.js";
 import { sanitizeGitRef } from "@/git/sanitizeGitRef.js";
+import { truncateEnd } from "@/git/truncateEnd.js";
 import { validateBranchName } from "@/git/validateBranchName.js";
 import { createBranch } from "@/git/createBranch.js";
 import { listTransforms } from "@/didactic/listTransforms.js";
@@ -22,23 +34,64 @@ import { printConfig } from "@/didactic/printConfig.js";
 import { explain } from "@/didactic/explain.js";
 
 /**
- * Minimal Result type to keep CLI flow as a pipeline without try/catch everywhere.
+ * Success variant of the {@link Result} union.
+ *
+ * @typeParam T - The wrapped value type.
  */
 type Ok<T> = { ok: true; value: T };
+/**
+ * Failure variant of the {@link Result} union.
+ */
 type Err = { ok: false; error: unknown };
+/**
+ * Minimal Result type used to keep the CLI flow as a pipeline
+ * without `try / catch` everywhere.
+ *
+ * @typeParam T - The success value type.
+ */
 type Result<T> = Ok<T> | Err;
 
+/**
+ * Wraps a value in an {@link Ok} result.
+ *
+ * @typeParam T - Value type.
+ * @param value - The success value.
+ * @returns An `Ok<T>` result.
+ */
 const ok = <T>(value: T): Ok<T> => ({ ok: true, value });
+
+/**
+ * Wraps an error in an {@link Err} result.
+ *
+ * @param error - The failure reason.
+ * @returns An `Err` result.
+ */
 const err = (error: unknown): Err => ({ ok: false, error });
 
+/**
+ * Type-narrowing guard that checks whether `r` is an {@link Ok} result.
+ */
 const isOk = <T>(r: Result<T>): r is Ok<T> => r.ok;
 
+/**
+ * Prints an error message and exits the process with code 1.
+ *
+ * @param msg - Human-readable error headline.
+ * @param e   - Optional underlying error to print.
+ */
 function fail(msg: string, e?: unknown): never {
   console.error(`\n❌ ${msg}`);
   if (e) console.error(e);
   process.exit(1);
 }
 
+/**
+ * Wraps a synchronous function in a {@link Result}.
+ *
+ * @typeParam T - Return type of `fn`.
+ * @param fn - The function to execute.
+ * @returns `Ok<T>` on success, `Err` on thrown exception.
+ */
 function safe<T>(fn: () => T): Result<T> {
   try {
     return ok(fn());
@@ -47,6 +100,13 @@ function safe<T>(fn: () => T): Result<T> {
   }
 }
 
+/**
+ * Wraps an asynchronous function in a {@link Result}.
+ *
+ * @typeParam T - Resolved type of the returned promise.
+ * @param fn - The async function to execute.
+ * @returns `Ok<T>` on success, `Err` on rejection.
+ */
 async function safeAsync<T>(fn: () => Promise<T>): Promise<Result<T>> {
   try {
     return ok(await fn());
@@ -55,6 +115,12 @@ async function safeAsync<T>(fn: () => Promise<T>): Promise<Result<T>> {
   }
 }
 
+/**
+ * Validates that a pattern string was provided.
+ *
+ * @param pattern - The resolved pattern string (may be `undefined`).
+ * @returns `Ok<string>` when valid, `Err` when missing or blank.
+ */
 function requirePattern(pattern: string | undefined): Result<string> {
   if (!pattern || pattern.trim().length === 0) {
     return err(new Error("Pattern is required. Use --pattern to specify it."));
@@ -62,6 +128,13 @@ function requirePattern(pattern: string | undefined): Result<string> {
   return ok(pattern);
 }
 
+/**
+ * Extracts CLI-provided values (`id`, `title`, `type`) from parsed arguments
+ * into a {@link RenderValues} map.
+ *
+ * @param args - The parsed CLI arguments.
+ * @returns A partial {@link RenderValues} map.
+ */
 function toInitialValues(args: ReturnType<typeof parseArgs>): RenderValues {
   return {
     id: args.options.id,
@@ -70,6 +143,9 @@ function toInitialValues(args: ReturnType<typeof parseArgs>): RenderValues {
   };
 }
 
+/**
+ * Internal context carried through the final stages of the CLI pipeline.
+ */
 type Ctx = {
   quiet: boolean;
   create: boolean;
@@ -80,6 +156,25 @@ type Ctx = {
   branchName: string;
 };
 
+/**
+ * Main CLI entry point.
+ *
+ * @remarks
+ * Orchestrates the full branch-name pipeline:
+ *
+ * 1. Parse and normalise `process.argv`.
+ * 2. Load project configuration (RC / `package.json` / git config).
+ * 3. Resolve the pattern (CLI flag → `--use` alias → config → git config).
+ * 4. Parse the pattern into an AST.
+ * 5. Resolve built-in and git built-in values.
+ * 6. Prompt for any missing values (unless `--no-prompt`).
+ * 7. Render, sanitize, truncate (`--max-length`), and validate.
+ * 8. Optionally create the branch (`--create`).
+ * 9. Print the branch name (unless `--quiet`).
+ *
+ * Didactic modes (`--help`, `--list-transforms`, `--print-config`,
+ * `--explain`) short-circuit the pipeline and return early.
+ */
 export async function run(): Promise<void> {
   // Normalize argv so it works consistently across:
   // - node dist/cli.js --id 123
@@ -229,6 +324,15 @@ export async function run(): Promise<void> {
 
   const sanitized = sanitizeGitRef(renderedRes.value);
 
+  // Apply --max-length truncation (after sanitization, before validation)
+  const maxLength = args.options.maxLength;
+  let finalBranchName = sanitized;
+  if (maxLength !== undefined) {
+    const truncateRes = safe(() => truncateEnd(sanitized, maxLength));
+    if (!isOk(truncateRes)) fail("Invalid --max-length value.", truncateRes.error);
+    finalBranchName = truncateRes.value;
+  }
+
   // --- Didactic mode: --explain ---
   if (isExplain) {
     console.log(
@@ -242,13 +346,15 @@ export async function run(): Promise<void> {
         gitValues,
         rendered: renderedRes.value,
         sanitized,
+        maxLength,
+        truncated: finalBranchName,
         transforms: defaultTransforms,
       }),
     );
     return;
   }
 
-  const validateRes = await safeAsync(() => validateBranchName(sanitized));
+  const validateRes = await safeAsync(() => validateBranchName(finalBranchName));
   if (!isOk(validateRes)) fail("Branch name is not valid for git.", validateRes.error);
 
   const ctx: Ctx = {
@@ -258,7 +364,7 @@ export async function run(): Promise<void> {
     pattern: patternRes.value,
     ast: astRes.value,
     values: valuesRes.value,
-    branchName: sanitized,
+    branchName: finalBranchName,
   };
 
   const createRes = create ? await safeAsync(() => createBranch(ctx.branchName)) : ok(undefined);
