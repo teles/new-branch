@@ -1,3 +1,18 @@
+# [0.6.0](https://github.com/teles/new-branch/compare/v0.5.0...v0.6.0) (2026-02-28)
+
+
+### Bug Fixes
+
+* **git:** use execa for git calls so tests can mock execa ([e8044e9](https://github.com/teles/new-branch/commit/e8044e9ef72c36ec700d7838513571b88d566962)), closes [#9](https://github.com/teles/new-branch/issues/9)
+
+
+### Features
+
+* **cli:** prefer project defaultType before prompting; normalize argv; provide typeChoices to resolver ([eea7877](https://github.com/teles/new-branch/commit/eea7877ed892b5f6b9f58bb72c94aeb7002a1ab4)), closes [#9](https://github.com/teles/new-branch/issues/9)
+* **config:** add config loaders, types, validation and tests; add tests.sh ([2dfdb9d](https://github.com/teles/new-branch/commit/2dfdb9d7f72532a96b76719fcc99af20ad4862b5)), closes [#9](https://github.com/teles/new-branch/issues/9)
+* **config:** add config loaders, types, validation and tests; add tests.sh ([9942212](https://github.com/teles/new-branch/commit/99422126c422478c307e50e5a4f06cb0a59878ab)), closes [#9](https://github.com/teles/new-branch/issues/9)
+* **docs:** update project configuration section to clarify precedence and validation rules [#11](https://github.com/teles/new-branch/issues/11) ([7b5de7a](https://github.com/teles/new-branch/commit/7b5de7a21d0a07d5f7518d0aa9d45465e257ebf2))
+
 # [0.5.0](https://github.com/teles/new-branch/compare/v0.4.0...v0.5.0) (2026-02-21)
 
 
