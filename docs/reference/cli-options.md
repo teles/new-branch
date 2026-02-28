@@ -6,6 +6,7 @@ Complete reference for all `new-branch` command-line options.
 
 ```bash
 new-branch [options]
+new-branch init [--yes]
 ```
 
 Also available as git subcommands:
@@ -14,6 +15,13 @@ Also available as git subcommands:
 git new-branch [options]
 git nb [options]
 ```
+
+## Subcommands
+
+| Subcommand   | Description                                                                |
+| ------------ | -------------------------------------------------------------------------- |
+| `init`       | Launch the interactive config wizard to create a `.newbranchrc.json` file. |
+| `init --yes` | Create a `.newbranchrc.json` with sensible defaults (no prompts).          |
 
 ## Options
 
@@ -29,12 +37,12 @@ git nb [options]
 
 ### Behavior Options
 
-| Option                    | Type      | Default | Description                                                                           |
-| ------------------------- | --------- | ------- | ------------------------------------------------------------------------------------- |
-| `-L, --max-length <n>`    | `number`  | —       | Maximum length for the final branch name. Truncates from the end if the name exceeds. |
-| `--create`                | `boolean` | `false` | Create the branch using `git switch -c` and switch to it.                             |
-| `--no-prompt`             | `boolean` | `false` | Disable interactive prompts. Fails if required values are missing.                    |
-| `--quiet`                 | `boolean` | `false` | Suppress non-essential output. Only prints the branch name.                           |
+| Option                 | Type      | Default | Description                                                                           |
+| ---------------------- | --------- | ------- | ------------------------------------------------------------------------------------- |
+| `-L, --max-length <n>` | `number`  | —       | Maximum length for the final branch name. Truncates from the end if the name exceeds. |
+| `--create`             | `boolean` | `false` | Create the branch using `git switch -c` and switch to it.                             |
+| `--no-prompt`          | `boolean` | `false` | Disable interactive prompts. Fails if required values are missing.                    |
+| `--quiet`              | `boolean` | `false` | Suppress non-essential output. Only prints the branch name.                           |
 
 ### Didactic Options
 

@@ -93,9 +93,27 @@ new-branch --pattern "{type}/{title:slugify}-{id}" --no-prompt
 # → Fails with an error listing missing values
 ```
 
+## Bootstrap Your Config
+
+Instead of creating a config file manually, use the **init wizard**:
+
+```bash
+new-branch init
+```
+
+The wizard walks you through selecting variables, transforms, branch types, and pattern aliases — with a **live preview** at each step. It writes a `.newbranchrc.json` file when you're done.
+
+For CI or quick setup, accept all defaults:
+
+```bash
+new-branch init --yes
+```
+
+Learn more in the [Init Wizard](/guide/init) guide.
+
 ## Save Your Pattern
 
-Instead of typing `--pattern` every time, save it in your project config:
+You can also create a config file manually:
 
 ::: code-group
 
@@ -132,6 +150,7 @@ new-branch --type feat --title "Add login page" --id PROJ-123
 
 ## What's Next?
 
+- Bootstrap your config with the [Init Wizard](/guide/init)
 - Learn the [Pattern Language](/guide/patterns) in depth
 - See all available [Transforms](/guide/transforms)
 - Configure [Pattern Aliases](/guide/pattern-aliases) for different workflows
