@@ -10,6 +10,13 @@ import { kebab } from "@/pattern/transforms/kebab.js";
 import { snake } from "@/pattern/transforms/snake.js";
 import { title } from "@/pattern/transforms/title.js";
 import { words } from "@/pattern/transforms/words.js";
+import { replace } from "@/pattern/transforms/replace.js";
+import { replaceAll } from "@/pattern/transforms/replaceAll.js";
+import { remove } from "@/pattern/transforms/remove.js";
+import { stripAccents } from "@/pattern/transforms/stripAccents.js";
+import { ifEmpty } from "@/pattern/transforms/ifEmpty.js";
+import { before } from "@/pattern/transforms/before.js";
+import { after } from "@/pattern/transforms/after.js";
 
 export const allTransforms = [
   lower,
@@ -21,6 +28,13 @@ export const allTransforms = [
   snake,
   title,
   words,
+  replace,
+  replaceAll,
+  remove,
+  stripAccents,
+  ifEmpty,
+  before,
+  after,
 ] satisfies TransformDef[];
 
 export const defaultTransforms = buildRegistry(allTransforms);

@@ -3,6 +3,7 @@ import { cac } from "cac";
 export type ParsedArgs = {
   options: {
     pattern?: string;
+    use?: string;
     id?: string;
     title?: string;
     type?: string;
@@ -10,6 +11,9 @@ export type ParsedArgs = {
     prompt?: boolean;
     quiet?: boolean;
     help?: boolean;
+    explain?: boolean;
+    listTransforms?: boolean;
+    printConfig?: boolean;
   };
   args: readonly string[];
 };
@@ -26,12 +30,19 @@ export function parseArgs(argv: readonly string[] = process.argv): ParsedArgs {
 
   cli
     .option("-p, --pattern <pattern>", "Branch pattern")
+    .option("--use <name>", "Use a named pattern alias from configuration")
     .option("--id <id>", "Task id")
     .option("--title <title>", "Task title")
     .option("--type <type>", "Branch type")
     .option("--create", "Create branch")
     .option("--no-prompt", "Fail instead of prompting for missing values")
     .option("--quiet", "Suppress non-essential output")
+    .option(
+      "--explain",
+      "Show a detailed breakdown of the branch pipeline without creating a branch",
+    )
+    .option("--list-transforms", "List all available transforms")
+    .option("--print-config", "Print the resolved configuration")
     .help();
 
   const cleaned = stripDoubleDash(argv);
@@ -42,6 +53,7 @@ export function parseArgs(argv: readonly string[] = process.argv): ParsedArgs {
   const options: ParsedArgs["options"] = {
     // Accept numeric or string-like values and coerce to string when present.
     pattern: opts.pattern !== undefined ? String(opts.pattern) : undefined,
+    use: opts.use !== undefined ? String(opts.use) : undefined,
     id: opts.id !== undefined ? String(opts.id) : undefined,
     title: opts.title !== undefined ? String(opts.title) : undefined,
     type: opts.type !== undefined ? String(opts.type) : undefined,
@@ -51,6 +63,9 @@ export function parseArgs(argv: readonly string[] = process.argv): ParsedArgs {
     prompt: typeof opts.prompt === "boolean" ? opts.prompt : undefined,
     quiet: typeof opts.quiet === "boolean" ? opts.quiet : undefined,
     help: typeof opts.help === "boolean" ? opts.help : undefined,
+    explain: typeof opts.explain === "boolean" ? opts.explain : undefined,
+    listTransforms: typeof opts.listTransforms === "boolean" ? opts.listTransforms : undefined,
+    printConfig: typeof opts.printConfig === "boolean" ? opts.printConfig : undefined,
   };
 
   return {

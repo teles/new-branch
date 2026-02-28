@@ -7,9 +7,9 @@ vi.mock("@/parseArgs.js", () => ({
   parseArgs: (...args: unknown[]) => parseArgsMock(...args),
 }));
 
-const loadConfigMock = vi.fn();
+const loadConfigWithSourceMock = vi.fn();
 vi.mock("@/config/loadConfig.js", () => ({
-  loadConfig: (...args: unknown[]) => loadConfigMock(...args),
+  loadConfigWithSource: (...args: unknown[]) => loadConfigWithSourceMock(...args),
 }));
 
 const getGitConfigMock = vi.fn();
@@ -38,8 +38,23 @@ vi.mock("@/pattern/transforms/renderPattern.js", () => ({
 }));
 
 vi.mock("@/pattern/transforms/index.js", () => ({
-  // just needs to exist; not used directly in our renderPattern mock
   defaultTransforms: {},
+  allTransforms: [],
+}));
+
+const listTransformsMock = vi.fn().mockReturnValue("");
+vi.mock("@/didactic/listTransforms.js", () => ({
+  listTransforms: (...args: unknown[]) => listTransformsMock(...args),
+}));
+
+const printConfigMock = vi.fn().mockReturnValue("");
+vi.mock("@/didactic/printConfig.js", () => ({
+  printConfig: (...args: unknown[]) => printConfigMock(...args),
+}));
+
+const explainMock = vi.fn().mockReturnValue("");
+vi.mock("@/didactic/explain.js", () => ({
+  explain: (...args: unknown[]) => explainMock(...args),
 }));
 
 const sanitizeGitRefMock = vi.fn();
@@ -118,7 +133,10 @@ describe("cli.ts (run)", () => {
 
     // Default behavior for dependencies
     parseArgsMock.mockReturnValue(defaultParseArgsReturn());
-    loadConfigMock.mockResolvedValue({ pattern: "{type}/{title}-{id}" });
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: { pattern: "{type}/{title}-{id}" },
+      source: ".newbranchrc.json",
+    });
 
     parsePatternMock.mockReturnValue({
       nodes: [],
@@ -157,7 +175,7 @@ describe("cli.ts (run)", () => {
 
     await expect(run()).resolves.toBeUndefined();
 
-    expect(loadConfigMock).not.toHaveBeenCalled();
+    expect(loadConfigWithSourceMock).not.toHaveBeenCalled();
     expect(getGitConfigMock).not.toHaveBeenCalled();
     expect(getBuiltinValuesMock).not.toHaveBeenCalled();
     expect(patternNeedsGitBuiltinsMock).not.toHaveBeenCalled();
@@ -190,7 +208,7 @@ describe("cli.ts (run)", () => {
 
     await run();
 
-    expect(loadConfigMock).toHaveBeenCalledTimes(1);
+    expect(loadConfigWithSourceMock).toHaveBeenCalledTimes(1);
     expect(getGitConfigMock).not.toHaveBeenCalled();
     expect(getBuiltinValuesMock).toHaveBeenCalledTimes(1);
     expect(patternNeedsGitBuiltinsMock).toHaveBeenCalledWith("{type}/{title}-{id}");
@@ -256,7 +274,10 @@ describe("cli.ts (run)", () => {
       defaultParseArgsReturn({ options: { id: "STK-1", title: "My task", type: "feat" } }),
     );
 
-    loadConfigMock.mockResolvedValue({ pattern: "{type}/{title}-{id}" });
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: { pattern: "{type}/{title}-{id}" },
+      source: ".newbranchrc.json",
+    });
     getGitConfigMock.mockResolvedValue("{id}-{title}");
 
     await run();
@@ -272,7 +293,10 @@ describe("cli.ts (run)", () => {
       defaultParseArgsReturn({ options: { id: "STK-1", title: "My task", type: "feat" } }),
     );
 
-    loadConfigMock.mockResolvedValue({ pattern: undefined });
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: { pattern: undefined },
+      source: "(none)",
+    });
     getGitConfigMock.mockResolvedValue("{type}/{title}-{id}");
 
     await run();
@@ -348,7 +372,10 @@ describe("cli.ts (run)", () => {
   it("fails when no pattern is provided (neither CLI, package.json, nor git config)", async () => {
     setArgv([]);
 
-    loadConfigMock.mockResolvedValue({ pattern: undefined });
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: { pattern: undefined },
+      source: "(none)",
+    });
     getGitConfigMock.mockResolvedValue(undefined);
     parseArgsMock.mockReturnValue(defaultParseArgsReturn({ options: { pattern: undefined } }));
 
@@ -400,5 +427,189 @@ describe("cli.ts (run)", () => {
     expect(errorSpy.mock.calls.map((c) => c.join(" ")).join("\n")).toMatch(
       /Branch name is not valid for git/i,
     );
+  });
+
+  // ---- --use option tests ----
+
+  it("resolves pattern from --use alias in config patterns", async () => {
+    setArgv(["--use", "hotfix", "--id", "STK-1", "--title", "My task"]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: { use: "hotfix", id: "STK-1", title: "My task" },
+      }),
+    );
+
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: {
+        pattern: "{type}/{title}-{id}",
+        patterns: {
+          hotfix: "hotfix/{id}-{title:kebab}",
+          release: "release/{currentBranch}",
+        },
+      },
+      source: ".newbranchrc.json",
+    });
+
+    renderPatternMock.mockReturnValue("hotfix/STK-1-my-task");
+    sanitizeGitRefMock.mockImplementation((s: string) => s);
+
+    await run();
+
+    expect(parsePatternMock).toHaveBeenCalledWith("hotfix/{id}-{title:kebab}");
+    expect(logSpy).toHaveBeenCalledWith("hotfix/STK-1-my-task");
+  });
+
+  it("--pattern takes precedence over --use", async () => {
+    setArgv([
+      "--pattern",
+      "{type}/{title}",
+      "--use",
+      "hotfix",
+      "--id",
+      "STK-1",
+      "--title",
+      "My task",
+      "--type",
+      "feat",
+    ]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: {
+          pattern: "{type}/{title}",
+          use: "hotfix",
+          id: "STK-1",
+          title: "My task",
+          type: "feat",
+        },
+      }),
+    );
+
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: {
+        patterns: {
+          hotfix: "hotfix/{id}-{title:kebab}",
+        },
+      },
+      source: ".newbranchrc.json",
+    });
+
+    renderPatternMock.mockReturnValue("feat/my-task");
+    sanitizeGitRefMock.mockImplementation((s: string) => s);
+
+    await run();
+
+    // --pattern wins; --use is ignored
+    expect(parsePatternMock).toHaveBeenCalledWith("{type}/{title}");
+    expect(logSpy).toHaveBeenCalledWith("feat/my-task");
+  });
+
+  it("fails with clear error when --use alias does not exist", async () => {
+    setArgv(["--use", "nonexistent", "--id", "STK-1"]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: { use: "nonexistent", id: "STK-1" },
+      }),
+    );
+
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: {
+        pattern: "{type}/{title}-{id}",
+        patterns: {
+          hotfix: "hotfix/{id}-{title:kebab}",
+        },
+      },
+      source: ".newbranchrc.json",
+    });
+
+    await expect(run()).rejects.toThrow(/process\.exit:1/);
+
+    expect(errorSpy).toHaveBeenCalled();
+    expect(errorSpy.mock.calls.map((c) => c.join(" ")).join("\n")).toMatch(
+      /Unknown pattern alias "nonexistent"/,
+    );
+  });
+
+  it("fails with clear error when --use is given but no patterns configured", async () => {
+    setArgv(["--use", "hotfix", "--id", "STK-1"]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: { use: "hotfix", id: "STK-1" },
+      }),
+    );
+
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: {
+        pattern: "{type}/{title}-{id}",
+      },
+      source: ".newbranchrc.json",
+    });
+
+    await expect(run()).rejects.toThrow(/process\.exit:1/);
+
+    expect(errorSpy).toHaveBeenCalled();
+    expect(errorSpy.mock.calls.map((c) => c.join(" ")).join("\n")).toMatch(
+      /Unknown pattern alias "hotfix"/,
+    );
+    expect(errorSpy.mock.calls.map((c) => c.join(" ")).join("\n")).toMatch(/\(none configured\)/);
+  });
+
+  it("--use takes precedence over configured default pattern", async () => {
+    setArgv(["--use", "release", "--id", "STK-1"]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: { use: "release", id: "STK-1" },
+      }),
+    );
+
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: {
+        pattern: "{type}/{title}-{id}",
+        patterns: {
+          hotfix: "hotfix/{id}-{title:kebab}",
+          release: "release/{id}",
+        },
+      },
+      source: ".newbranchrc.json",
+    });
+
+    renderPatternMock.mockReturnValue("release/STK-1");
+    sanitizeGitRefMock.mockImplementation((s: string) => s);
+
+    await run();
+
+    expect(parsePatternMock).toHaveBeenCalledWith("release/{id}");
+    expect(logSpy).toHaveBeenCalledWith("release/STK-1");
+  });
+
+  it("does not consult git config when --use resolves a pattern", async () => {
+    setArgv(["--use", "hotfix", "--id", "STK-1", "--title", "fix"]);
+
+    parseArgsMock.mockReturnValue(
+      defaultParseArgsReturn({
+        options: { use: "hotfix", id: "STK-1", title: "fix" },
+      }),
+    );
+
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: {
+        patterns: {
+          hotfix: "hotfix/{id}-{title:kebab}",
+        },
+      },
+      source: ".newbranchrc.json",
+    });
+
+    renderPatternMock.mockReturnValue("hotfix/STK-1-fix");
+    sanitizeGitRefMock.mockImplementation((s: string) => s);
+
+    await run();
+
+    expect(getGitConfigMock).not.toHaveBeenCalled();
+    expect(parsePatternMock).toHaveBeenCalledWith("hotfix/{id}-{title:kebab}");
   });
 });

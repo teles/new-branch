@@ -124,6 +124,55 @@ describe("gitBuiltins", () => {
     expect(result).toEqual({ repoName: "new-branch" });
   });
 
+  it("repoName: returns undefined when rev-parse fails", async () => {
+    execaMock.mockRejectedValue(new Error("not a git repo"));
+
+    const result = await getGitBuiltins(["repoName"]);
+    expect(result).toEqual({ repoName: undefined });
+  });
+
+  it("repoName: returns undefined when rev-parse returns empty stdout", async () => {
+    execaMock.mockImplementation(async (...argv: unknown[]) => {
+      const args = argv[1] as readonly string[];
+      if (args.join(" ") === "rev-parse --show-toplevel") {
+        return { stdout: "   " } as ExecaReturn;
+      }
+      throw new Error("unexpected");
+    });
+
+    const result = await getGitBuiltins(["repoName"]);
+    expect(result).toEqual({ repoName: undefined });
+  });
+
+  it("shortSha: returns undefined when git returns empty stdout", async () => {
+    execaMock.mockResolvedValue({ stdout: "  " } as ExecaReturn);
+
+    const result = await getGitBuiltins(["shortSha"]);
+    expect(result).toEqual({ shortSha: undefined });
+  });
+
+  it("lastTag: returns undefined when no tags exist", async () => {
+    execaMock.mockRejectedValue(new Error("no tags"));
+
+    const result = await getGitBuiltins(["lastTag"]);
+    expect(result).toEqual({ lastTag: undefined });
+  });
+
+  it("userName: falls back to USERNAME env when USER is not set", async () => {
+    getGitConfigMock.mockResolvedValue(undefined);
+    setEnv(undefined, "windowsUser");
+
+    const result = await getGitBuiltins(["userName"]);
+    expect(result).toEqual({ userName: "windowsUser" });
+  });
+
+  it("safeExec returns undefined when stdout is null", async () => {
+    execaMock.mockResolvedValue({ stdout: null } as unknown as ExecaReturn);
+
+    const result = await getGitBuiltins(["shortSha"]);
+    expect(result).toEqual({ shortSha: undefined });
+  });
+
   it("repoName: derives from repo root path (windows)", async () => {
     execaMock.mockImplementation(async (...argv: unknown[]) => {
       const args = argv[1] as readonly string[];
