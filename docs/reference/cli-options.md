@@ -29,11 +29,12 @@ git nb [options]
 
 ### Behavior Options
 
-| Option        | Type      | Default | Description                                                        |
-| ------------- | --------- | ------- | ------------------------------------------------------------------ |
-| `--create`    | `boolean` | `false` | Create the branch using `git switch -c` and switch to it.          |
-| `--no-prompt` | `boolean` | `false` | Disable interactive prompts. Fails if required values are missing. |
-| `--quiet`     | `boolean` | `false` | Suppress non-essential output. Only prints the branch name.        |
+| Option                    | Type      | Default | Description                                                                           |
+| ------------------------- | --------- | ------- | ------------------------------------------------------------------------------------- |
+| `-L, --max-length <n>`    | `number`  | —       | Maximum length for the final branch name. Truncates from the end if the name exceeds. |
+| `--create`                | `boolean` | `false` | Create the branch using `git switch -c` and switch to it.                             |
+| `--no-prompt`             | `boolean` | `false` | Disable interactive prompts. Fails if required values are missing.                    |
+| `--quiet`                 | `boolean` | `false` | Suppress non-essential output. Only prints the branch name.                           |
 
 ### Didactic Options
 
@@ -87,6 +88,21 @@ BRANCH=$(new-branch \
   --quiet)
 
 git checkout -b "$BRANCH"
+```
+
+### Limit branch name length
+
+```bash
+new-branch \
+  --pattern "{type}/{title:slugify}-{id}" \
+  --type feat \
+  --title "Implement user authentication flow" \
+  --id PROJ-123 \
+  --max-length 30
+```
+
+```
+feat/implement-user-authentica
 ```
 
 ### Inspect the pipeline
