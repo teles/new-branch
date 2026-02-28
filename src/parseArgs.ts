@@ -40,11 +40,14 @@ export function parseArgs(argv: readonly string[] = process.argv): ParsedArgs {
   const opts = parsed.options as Record<string, unknown>;
 
   const options: ParsedArgs["options"] = {
-    pattern: typeof opts.pattern === "string" ? opts.pattern : undefined,
-    id: typeof opts.id === "string" ? opts.id : undefined,
-    title: typeof opts.title === "string" ? opts.title : undefined,
-    type: typeof opts.type === "string" ? opts.type : undefined,
+    // Accept numeric or string-like values and coerce to string when present.
+    pattern: opts.pattern !== undefined ? String(opts.pattern) : undefined,
+    id: opts.id !== undefined ? String(opts.id) : undefined,
+    title: opts.title !== undefined ? String(opts.title) : undefined,
+    type: opts.type !== undefined ? String(opts.type) : undefined,
     create: typeof opts.create === "boolean" ? opts.create : undefined,
+    // CAC provides `--no-prompt` as `noPrompt` normally, but the flag will
+    // also be available as `prompt` when parsed; keep boolean handling.
     prompt: typeof opts.prompt === "boolean" ? opts.prompt : undefined,
     quiet: typeof opts.quiet === "boolean" ? opts.quiet : undefined,
     help: typeof opts.help === "boolean" ? opts.help : undefined,

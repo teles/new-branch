@@ -1,13 +1,17 @@
-import { input, select } from "@inquirer/prompts";
 import type { ParsedPattern } from "@/pattern/types.js";
 import type { RenderValues } from "@/pattern/transforms/renderPattern.js";
-import { TYPE_CHOICES } from "@/runtime/enums.js";
+import { TYPE_CHOICES, type EnumChoice } from "@/runtime/enums.js";
 
 export type ResolveOptions = {
   /**
    * When false, missing required variables will throw instead of prompting.
    */
   prompt: boolean;
+  /**
+   * Optional choices to present when prompting for the special `type` variable.
+   * If omitted, {@link TYPE_CHOICES} will be used.
+   */
+  typeChoices?: readonly EnumChoice[];
 };
 
 /**
@@ -58,10 +62,18 @@ export async function resolveMissingValues(
       throw new Error(`Missing required value: "${name}"`);
     }
 
+    // Lazily import the interactive prompts to avoid importing
+    // `@inquirer/prompts` at module load time. This prevents environments
+    // with incompatible Node.js versions from failing when the CLI is
+    // executed in non-interactive mode (e.g., `--no-prompt`).
+    const prompts = await import("@inquirer/prompts");
+    const { input, select } = prompts;
+
     if (name === "type") {
+      const choices = opts.typeChoices ?? TYPE_CHOICES;
       const selected = await select({
         message: "Select branch type:",
-        choices: TYPE_CHOICES,
+        choices,
       });
 
       values[name] = selected;

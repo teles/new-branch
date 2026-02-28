@@ -1,5 +1,5 @@
-import { execa } from "execa";
 import { getGitConfig } from "@/git/gitConfig.js";
+import { execa } from "execa";
 
 export type GitBuiltins = {
   shortSha?: string;
@@ -29,8 +29,8 @@ function pickAllKeysIfUndefined(keys?: GitBuiltinKey[]): GitBuiltinKey[] {
 
 async function safeExec(args: string[]): Promise<string | undefined> {
   try {
-    const { stdout } = await execa("git", args);
-    const value = stdout.trim();
+    const { stdout } = (await execa("git", args)) as { stdout: string };
+    const value = String(stdout ?? "").trim();
     return value.length ? value : undefined;
   } catch {
     return undefined;
