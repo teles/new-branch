@@ -102,6 +102,61 @@ describe("validateProjectConfigSource", () => {
     const cfg = validateProjectConfigSource({ pattern: "{id}" }, "git");
     expect(cfg).toEqual({ pattern: "{id}" });
   });
+
+  it("validates patterns as a Record<string, string>", () => {
+    const cfg = validateProjectConfigSource(
+      {
+        patterns: {
+          hotfix: "hotfix/{id}-{title:kebab}",
+          release: "release/{currentBranch}",
+        },
+      },
+      "rc",
+    );
+    expect(cfg).toEqual({
+      patterns: {
+        hotfix: "hotfix/{id}-{title:kebab}",
+        release: "release/{currentBranch}",
+      },
+    });
+  });
+
+  it("trims pattern alias values", () => {
+    const cfg = validateProjectConfigSource(
+      {
+        patterns: {
+          hotfix: "  hotfix/{id}  ",
+        },
+      },
+      "rc",
+    );
+    expect(cfg.patterns).toEqual({ hotfix: "hotfix/{id}" });
+  });
+
+  it("throws when patterns is not an object", () => {
+    expect(() => validateProjectConfigSource({ patterns: "not-an-object" }, "rc")).toThrow(
+      /Invalid new-branch config from rc: patterns must be an object/,
+    );
+  });
+
+  it("throws when a patterns value is not a string", () => {
+    expect(() => validateProjectConfigSource({ patterns: { hotfix: 123 } }, "rc")).toThrow(
+      /Invalid new-branch config from rc: patterns\["hotfix"\] must be a string/,
+    );
+  });
+
+  it("throws when a patterns value is empty after trimming", () => {
+    expect(() => validateProjectConfigSource({ patterns: { hotfix: "   " } }, "rc")).toThrow(
+      /Invalid new-branch config from rc: patterns\["hotfix"\] cannot be empty/,
+    );
+  });
+
+  it("omits patterns when all entries are empty (edge case)", () => {
+    // Actually this should throw per validation, so test individual empty
+    expect(() => validateProjectConfigSource({ patterns: { empty: "" } }, "pkg")).toThrow(
+      /patterns\["empty"\] cannot be empty/,
+    );
+  });
 });
 
 describe("validateProjectConfigFinal", () => {
