@@ -64,6 +64,25 @@ export function validateProjectConfigSource(raw: unknown, source: string): Proje
     cfg.defaultType = trimOrUndefined(obj.defaultType);
   }
 
+  if ("patterns" in obj) {
+    const patternsVal = obj.patterns;
+    invariant(isObject(patternsVal), source, "patterns must be an object");
+
+    const entries = Object.entries(patternsVal as Record<string, unknown>);
+    const normalized: Record<string, string> = {};
+
+    for (const [key, val] of entries) {
+      invariant(isString(val), source, `patterns["${key}"] must be a string`);
+      const trimmed = trimOrUndefined(val);
+      invariant(trimmed, source, `patterns["${key}"] cannot be empty`);
+      normalized[key] = trimmed;
+    }
+
+    if (Object.keys(normalized).length > 0) {
+      cfg.patterns = normalized;
+    }
+  }
+
   if ("types" in obj) {
     const typesVal = obj.types;
     invariant(Array.isArray(typesVal), source, "types must be an array");

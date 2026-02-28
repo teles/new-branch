@@ -1,4 +1,4 @@
-import { getGitConfig } from "@/git/gitConfig.js";
+import { getGitConfig, getGitConfigRegexp } from "@/git/gitConfig.js";
 import type { BranchType, ConfigLoader, LoadResult, ProjectConfig } from "../types.js";
 import { validateProjectConfigSource, validateProjectConfigFinal } from "../validate.js";
 
@@ -21,6 +21,21 @@ function parseGitTypes(raw: string): BranchType[] {
     });
 }
 
+const PATTERNS_PREFIX = "new-branch.patterns.";
+
+function parseGitPatterns(entries: [string, string][]): Record<string, string> | undefined {
+  if (entries.length === 0) return undefined;
+
+  const result: Record<string, string> = {};
+  for (const [key, value] of entries) {
+    const name = key.slice(PATTERNS_PREFIX.length);
+    if (name && value) {
+      result[name] = value;
+    }
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
 export const gitLoader: ConfigLoader = {
   source: "git",
 
@@ -28,8 +43,9 @@ export const gitLoader: ConfigLoader = {
     const pattern = await getGitConfig("new-branch.pattern");
     const defaultType = await getGitConfig("new-branch.defaultType");
     const typesRaw = await getGitConfig("new-branch.types");
+    const patternsEntries = await getGitConfigRegexp("^new-branch\\.patterns\\.");
 
-    if (!pattern && !defaultType && !typesRaw) {
+    if (!pattern && !defaultType && !typesRaw && patternsEntries.length === 0) {
       return { found: false, source: "git", config: undefined };
     }
 
@@ -37,6 +53,9 @@ export const gitLoader: ConfigLoader = {
     if (pattern) cfg.pattern = pattern;
     if (defaultType) cfg.defaultType = defaultType;
     if (typesRaw) cfg.types = parseGitTypes(typesRaw);
+
+    const patterns = parseGitPatterns(patternsEntries);
+    if (patterns) cfg.patterns = patterns;
 
     const sourceValidated = validateProjectConfigSource(cfg, "git config");
     const finalValidated = validateProjectConfigFinal(sourceValidated, "git config");

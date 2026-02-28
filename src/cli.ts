@@ -133,18 +133,41 @@ export async function run(): Promise<void> {
   // Git config (respects local -> global precedence automatically)
   let gitPattern: string | undefined;
 
-  if (!args.options.pattern && !projectConfig.pattern) {
+  if (!args.options.pattern && !args.options.use && !projectConfig.pattern) {
     gitPattern = await getGitConfig("new-branch.pattern");
   }
 
-  const resolvedPattern = args.options.pattern ?? projectConfig.pattern ?? gitPattern;
+  // Resolution logic for --use:
+  // If --pattern is provided, use it directly (highest precedence).
+  // If --use is provided, resolve from patterns config. Error if alias not found.
+  // Otherwise, fall back to configured pattern or git config.
+  let useAliasPattern: string | undefined;
+  if (!args.options.pattern && args.options.use) {
+    const aliasName = args.options.use;
+    const aliasPattern = projectConfig.patterns?.[aliasName];
+    if (!aliasPattern) {
+      fail(
+        `Unknown pattern alias "${aliasName}". Available aliases: ${
+          projectConfig.patterns
+            ? Object.keys(projectConfig.patterns).join(", ")
+            : "(none configured)"
+        }`,
+      );
+    }
+    useAliasPattern = aliasPattern;
+  }
+
+  const resolvedPattern =
+    args.options.pattern ?? useAliasPattern ?? projectConfig.pattern ?? gitPattern;
   const patternSource = args.options.pattern
     ? "CLI --pattern"
-    : projectConfig.pattern
-      ? configSource
-      : gitPattern
-        ? "git config"
-        : "(none)";
+    : useAliasPattern
+      ? `CLI --use (${args.options.use})`
+      : projectConfig.pattern
+        ? configSource
+        : gitPattern
+          ? "git config"
+          : "(none)";
   const patternRes = requirePattern(resolvedPattern);
   if (!isOk(patternRes)) fail("Invalid CLI arguments.", patternRes.error);
 
