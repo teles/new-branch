@@ -161,4 +161,88 @@ describe("explain", () => {
     expect(diff).toContain("Rendered:       feat/My Feature!!");
     expect(diff).toContain("Sanitized:      feat/My-Feature");
   });
+
+  it("shows (none) when no variables are used", () => {
+    const ast: ParsedPattern = {
+      nodes: [{ kind: "literal", value: "static-branch" }],
+      variablesUsed: [],
+    };
+    const output = explain(
+      makeInput({
+        pattern: "static-branch",
+        ast,
+        resolvedValues: {},
+        cliValues: {},
+        builtinValues: {},
+        rendered: "static-branch",
+        sanitized: "static-branch",
+      }),
+    );
+    expect(output).toContain("Variables used:  (none)");
+  });
+
+  it("omits builtin values section when empty", () => {
+    const output = explain(makeInput({ builtinValues: {} }));
+    expect(output).not.toContain("Builtin values:");
+  });
+
+  it("omits CLI values section when empty", () => {
+    const output = explain(makeInput({ cliValues: {} }));
+    expect(output).not.toContain("CLI values:");
+  });
+
+  it("omits transforms section when no variable has transforms", () => {
+    const ast: ParsedPattern = {
+      nodes: [
+        { kind: "variable", name: "type", transforms: [] },
+        { kind: "literal", value: "/" },
+        { kind: "variable", name: "id", transforms: [] },
+      ],
+      variablesUsed: ["type", "id"],
+    };
+    const output = explain(makeInput({ ast }));
+    expect(output).not.toContain("Transforms applied:");
+  });
+
+  it("handles unknown transform gracefully (no fn in registry)", () => {
+    const ast: ParsedPattern = {
+      nodes: [
+        {
+          kind: "variable",
+          name: "title",
+          transforms: [{ name: "nonexistent", args: [] }],
+        },
+      ],
+      variablesUsed: ["title"],
+    };
+    const output = explain(
+      makeInput({
+        pattern: "{title:nonexistent}",
+        ast,
+        resolvedValues: { title: "hello" },
+        rendered: "hello",
+        sanitized: "hello",
+        transforms: {},
+      }),
+    );
+    expect(output).toContain("Transforms applied:");
+    expect(output).toContain('{title} = "hello"');
+    expect(output).toContain('→ nonexistent → "hello"');
+  });
+
+  it("skips undefined builtin/git/cli values in their sections", () => {
+    const output = explain(
+      makeInput({
+        builtinValues: { date: "2026-01-01", unused: undefined },
+        gitValues: { branch: "main", sha: undefined },
+        cliValues: { title: "x", id: undefined },
+      }),
+    );
+    expect(output).toContain('date = "2026-01-01"');
+    expect(output).not.toContain("unused");
+    expect(output).toContain('branch = "main"');
+    expect(output).not.toContain("sha");
+    expect(output).toContain('title = "x"');
+    expect(output).not.toContain("id = ");
+  });
 });

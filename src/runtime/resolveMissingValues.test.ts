@@ -119,4 +119,28 @@ describe("resolveMissingValues", () => {
     expect(input).toHaveBeenCalled();
     expect(out.title).toBe("Trimmed");
   });
+
+  it("input prompt validate rejects empty strings", async () => {
+    const parsed = parsePattern("{title}");
+    (input as unknown as Mock).mockImplementation(
+      async (opts: { validate?: (v: string) => true | string }) => {
+        // Simulate inquirer calling validate with empty and non-empty values
+        if (opts.validate) {
+          const emptyResult = opts.validate("");
+          expect(emptyResult).toBe("title cannot be empty");
+
+          const whitespaceResult = opts.validate("   ");
+          expect(whitespaceResult).toBe("title cannot be empty");
+
+          const validResult = opts.validate("valid input");
+          expect(validResult).toBe(true);
+        }
+        return "valid input";
+      },
+    );
+
+    const out = await resolveMissingValues(parsed, {}, { prompt: true });
+
+    expect(out.title).toBe("valid input");
+  });
 });
