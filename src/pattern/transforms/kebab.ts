@@ -2,12 +2,18 @@ import type { TransformDef } from "./types.js";
 import { splitWords } from "./helpers/words.js";
 
 /**
- * Transform: kebab
+ * Transform: **kebab**
  *
- * Converts an input string into kebab-case (lowercased words joined with
- * hyphens). Uses `splitWords` to determine word boundaries.
+ * @remarks
+ * Converts an input string into kebab-case (lowercased words joined
+ * with hyphens). Uses {@link splitWords} to determine word boundaries.
  *
- * Example: "My Task" -> "my-task"
+ * Pattern syntax: `{variable:kebab}`
+ *
+ * @example
+ * ```ts
+ * kebab.fn("My Task", []); // => "my-task"
+ * ```
  */
 export const kebab: TransformDef = {
   name: "kebab",

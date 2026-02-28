@@ -1,5 +1,18 @@
 import type { TransformDef } from "@/pattern/transforms/types.js";
 
+/**
+ * Transform: **replaceAll**
+ *
+ * @remarks
+ * Replaces **all** occurrences of `search` with `replacement`.
+ *
+ * Pattern syntax: `{variable:replaceAll:search:replacement}`
+ *
+ * @example
+ * ```ts
+ * replaceAll.fn("foo bar foo", ["foo", "baz"]); // => "baz bar baz"
+ * ```
+ */
 export const replaceAll: TransformDef = {
   name: "replaceAll",
   fn: (value, [search, replacement]) => {

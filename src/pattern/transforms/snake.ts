@@ -2,12 +2,18 @@ import type { TransformDef } from "./types.js";
 import { splitWords } from "./helpers/words.js";
 
 /**
- * Transform: snake
+ * Transform: **snake**
  *
- * Converts an input string into snake_case (lowercased words joined with
- * underscores). Uses `splitWords` to determine boundaries.
+ * @remarks
+ * Converts an input string into snake_case (lowercased words joined
+ * with underscores). Uses {@link splitWords} to determine boundaries.
  *
- * Example: "My Task" -> "my_task"
+ * Pattern syntax: `{variable:snake}`
+ *
+ * @example
+ * ```ts
+ * snake.fn("My Task", []); // => "my_task"
+ * ```
  */
 export const snake: TransformDef = {
   name: "snake",

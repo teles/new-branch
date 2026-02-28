@@ -137,6 +137,14 @@ export function parsePattern(input: string): ParsedPattern {
   };
 }
 
+/**
+ * Parses a single transform segment like `"slugify"` or `"max:25"`
+ * into a {@link TransformNode}.
+ *
+ * @param segment - The raw transform string (e.g. `"replace:_:-"`).
+ * @returns The parsed {@link TransformNode}.
+ * @throws {@link Error} If the segment is empty or has no name.
+ */
 function parseTransform(segment: string): TransformNode {
   // segment examples:
   // - "slugify"
@@ -153,6 +161,12 @@ function parseTransform(segment: string): TransformNode {
   return { name, args };
 }
 
+/**
+ * Deduplicates a string array while preserving the original order.
+ *
+ * @param items - The array of strings to deduplicate.
+ * @returns A new array containing only the first occurrence of each item.
+ */
 function uniquePreserveOrder(items: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];

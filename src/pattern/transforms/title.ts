@@ -2,12 +2,19 @@ import type { TransformDef } from "./types.js";
 import { splitWords, upperFirst } from "./helpers/words.js";
 
 /**
- * Transform: title
+ * Transform: **title**
  *
- * Converts an input string into Title Case where each word's first
- * character is upper-cased and the remainder lower-cased. Uses `splitWords`.
+ * @remarks
+ * Converts an input string into Title Case where each word’s first
+ * character is upper-cased and the remainder lower-cased.
+ * Uses {@link splitWords} for boundary detection.
  *
- * Example: "hello WORLD" -> "Hello World"
+ * Pattern syntax: `{variable:title}`
+ *
+ * @example
+ * ```ts
+ * title.fn("hello WORLD", []); // => "Hello World"
+ * ```
  */
 export const title: TransformDef = {
   name: "title",

@@ -1,7 +1,13 @@
 /**
- * Represents a map of built-in runtime values available
- * during pattern rendering.
+ * @module runtime/builtins
  *
+ * Date-based built-in variables available during pattern rendering.
+ */
+
+/**
+ * A map of built-in runtime variable names to their string values.
+ *
+ * @remarks
  * All values are strings to keep the rendering pipeline
  * strictly string-based and simple.
  */

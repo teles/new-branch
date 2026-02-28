@@ -1,5 +1,18 @@
 import type { TransformDef } from "@/pattern/transforms/types.js";
 
+/**
+ * Transform: **remove**
+ *
+ * @remarks
+ * Removes **all** occurrences of a substring from the value.
+ *
+ * Pattern syntax: `{variable:remove:substring}`
+ *
+ * @example
+ * ```ts
+ * remove.fn("foobarfoo", ["foo"]); // => "bar"
+ * ```
+ */
 export const remove: TransformDef = {
   name: "remove",
   fn: (value, [target]) => {

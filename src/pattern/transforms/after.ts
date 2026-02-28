@@ -1,5 +1,20 @@
 import type { TransformDef } from "@/pattern/transforms/types.js";
 
+/**
+ * Transform: **after**
+ *
+ * @remarks
+ * Appends a suffix to the value. If the value is empty, returns
+ * an empty string (the suffix is not added to avoid dangling separators).
+ *
+ * Pattern syntax: `{variable:after:suffix}`
+ *
+ * @example
+ * ```ts
+ * after.fn("feat", ["-wip"]); // => "feat-wip"
+ * after.fn("", ["-wip"]);     // => ""
+ * ```
+ */
 export const after: TransformDef = {
   name: "after",
   fn: (value, [suffix]) => {

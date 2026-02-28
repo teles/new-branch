@@ -1,4 +1,11 @@
 /**
+ * @module helpers/words
+ *
+ * Word-splitting utilities used by case-conversion transforms
+ * (camel, kebab, snake, title, etc.).
+ */
+
+/**
  * Splits an input string into word-like segments.
  *
  * The function attempts to be Unicode-aware and supports the following

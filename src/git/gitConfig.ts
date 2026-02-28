@@ -1,5 +1,20 @@
 import { execa } from "execa";
 
+/**
+ * Retrieves a single Git config value by key.
+ *
+ * @remarks
+ * Runs `git config --get <key>` as a subprocess. Returns `undefined`
+ * when the key is not set or the command fails (e.g. outside a repo).
+ *
+ * @param key - The Git config key to look up (e.g. `"user.name"`).
+ * @returns The trimmed config value, or `undefined` if not found.
+ *
+ * @example
+ * ```ts
+ * const name = await getGitConfig("user.name"); // "Alice" | undefined
+ * ```
+ */
 export async function getGitConfig(key: string): Promise<string | undefined> {
   try {
     const { stdout } = (await execa("git", ["config", "--get", key])) as { stdout: string };
@@ -11,11 +26,20 @@ export async function getGitConfig(key: string): Promise<string | undefined> {
 }
 
 /**
- * Returns all git config entries matching a key prefix using `--get-regexp`.
- * Each entry is returned as a `[key, value]` tuple.
+ * Returns all git config entries matching a key pattern using `--get-regexp`.
  *
- * Example: `getGitConfigRegexp("new-branch.patterns\\.")` returns
- * `[["new-branch.patterns.hotfix", "hotfix/{id}"], ...]`
+ * @remarks
+ * Each entry is returned as a `[key, value]` tuple. Returns an empty
+ * array if no entries match or if the command fails.
+ *
+ * @param pattern - A regular expression pattern passed to `git config --get-regexp`.
+ * @returns An array of `[key, value]` tuples.
+ *
+ * @example
+ * ```ts
+ * const entries = await getGitConfigRegexp("^new-branch\\.patterns\\.");
+ * // => [["new-branch.patterns.hotfix", "hotfix/{id}"], ...]
+ * ```
  */
 export async function getGitConfigRegexp(pattern: string): Promise<[key: string, value: string][]> {
   try {

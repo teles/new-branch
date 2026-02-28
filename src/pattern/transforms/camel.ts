@@ -2,15 +2,21 @@ import type { TransformDef } from "./types.js";
 import { splitWords, upperFirst } from "./helpers/words.js";
 
 /**
- * Transform: camel
+ * Transform: **camel**
  *
- * Converts an input string into camelCase. Uses `splitWords` to extract word
- * boundaries and lower-cases the words before joining. The first word is kept
- * in lower-case; subsequent words are capitalized using `upperFirst`.
+ * @remarks
+ * Converts an input string into camelCase. Uses {@link splitWords} to
+ * extract word boundaries and lower-cases the words before joining.
+ * The first word is kept in lower-case; subsequent words are
+ * capitalised with {@link upperFirst}.
  *
- * Examples:
- * - "My Task" -> "myTask"
- * - "HTTP Server" -> "httpServer"
+ * Pattern syntax: `{variable:camel}`
+ *
+ * @example
+ * ```ts
+ * camel.fn("My Task", []);     // => "myTask"
+ * camel.fn("HTTP Server", []); // => "httpServer"
+ * ```
  */
 export const camel: TransformDef = {
   name: "camel",

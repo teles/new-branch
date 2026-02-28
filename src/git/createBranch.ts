@@ -3,11 +3,18 @@ import { execa } from "execa";
 /**
  * Creates and switches to a new Git branch.
  *
- * Strategy:
+ * @remarks
+ * Uses a two-step strategy for maximum compatibility:
  * 1. Try `git switch -c <name>` (modern Git ≥ 2.23).
- * 2. Fallback to `git checkout -b <name>` if switch is unavailable.
+ * 2. Fallback to `git checkout -b <name>` if `switch` is unavailable.
  *
- * @throws Error if branch creation fails.
+ * @param name - The name of the branch to create.
+ * @throws {@link Error} If both `git switch -c` and `git checkout -b` fail.
+ *
+ * @example
+ * ```ts
+ * await createBranch("feat/my-feature");
+ * ```
  */
 export async function createBranch(name: string): Promise<void> {
   try {

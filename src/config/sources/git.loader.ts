@@ -2,6 +2,16 @@ import { getGitConfig, getGitConfigRegexp } from "@/git/gitConfig.js";
 import type { BranchType, ConfigLoader, LoadResult, ProjectConfig } from "../types.js";
 import { validateProjectConfigSource, validateProjectConfigFinal } from "../validate.js";
 
+/**
+ * Parses a comma-separated git config value into {@link BranchType} entries.
+ *
+ * @remarks
+ * Each entry may be either `"value"` (label defaults to value) or
+ * `"value:label"` (colon-separated).
+ *
+ * @param raw - The raw comma-separated string from git config.
+ * @returns An array of {@link BranchType} objects.
+ */
 function parseGitTypes(raw: string): BranchType[] {
   return raw
     .split(",")
@@ -21,8 +31,15 @@ function parseGitTypes(raw: string): BranchType[] {
     });
 }
 
+/** Prefix used for per-alias pattern keys in git config. */
 const PATTERNS_PREFIX = "new-branch.patterns.";
 
+/**
+ * Converts raw `git config --get-regexp` entries into a patterns map.
+ *
+ * @param entries - Key/value tuples from `getGitConfigRegexp`.
+ * @returns A record of pattern aliases, or `undefined` when empty.
+ */
 function parseGitPatterns(entries: [string, string][]): Record<string, string> | undefined {
   if (entries.length === 0) return undefined;
 
@@ -36,6 +53,16 @@ function parseGitPatterns(entries: [string, string][]): Record<string, string> |
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
+/**
+ * Config loader that reads `new-branch.*` keys from git config.
+ *
+ * @remarks
+ * Supported keys:
+ * - `new-branch.pattern`
+ * - `new-branch.defaultType`
+ * - `new-branch.types` (comma-separated)
+ * - `new-branch.patterns.<alias>` (named patterns)
+ */
 export const gitLoader: ConfigLoader = {
   source: "git",
 
