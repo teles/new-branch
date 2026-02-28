@@ -10,13 +10,16 @@ vi.mock("@/parseArgs.js", () => ({
 }));
 
 vi.mock("@/config/loadConfig.js", () => ({
-  loadConfig: async () => ({
-    pattern: "{type}/{id}",
-    types: [
-      { value: "rc", label: "RC" },
-      { value: "feat", label: "Feature" },
-    ],
-    defaultType: "rc",
+  loadConfigWithSource: async () => ({
+    config: {
+      pattern: "{type}/{id}",
+      types: [
+        { value: "rc", label: "RC" },
+        { value: "feat", label: "Feature" },
+      ],
+      defaultType: "rc",
+    },
+    source: ".newbranchrc.json",
   }),
 }));
 
