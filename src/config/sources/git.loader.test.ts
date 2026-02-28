@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // ---- mocks ----
 const getGitConfigMock = vi.fn();
+const getGitConfigRegexpMock = vi.fn();
 vi.mock("@/git/gitConfig.js", () => ({
   getGitConfig: (...args: unknown[]) => getGitConfigMock(...args),
+  getGitConfigRegexp: (...args: unknown[]) => getGitConfigRegexpMock(...args),
 }));
 
 const validateProjectConfigSourceMock = vi.fn();
@@ -28,6 +30,7 @@ describe("gitLoader", () => {
 
     // default: nothing in git config
     getGitConfigMock.mockResolvedValue(undefined);
+    getGitConfigRegexpMock.mockResolvedValue([]);
   });
 
   it("returns found:false when pattern, defaultType and types are all missing", async () => {
@@ -144,5 +147,63 @@ describe("gitLoader", () => {
 
     expect(res.found).toBe(true);
     expect(res.config).toEqual({ pattern: "{id}", defaultType: "feat" });
+  });
+
+  it("reads patterns from git config --get-regexp", async () => {
+    getGitConfigRegexpMock.mockResolvedValue([
+      ["new-branch.patterns.hotfix", "hotfix/{id}-{title:kebab}"],
+      ["new-branch.patterns.release", "release/{currentBranch}"],
+    ]);
+
+    const res = await gitLoader.load();
+
+    expect(res.found).toBe(true);
+    const cfg = res.config as ProjectConfig;
+    expect(cfg.patterns).toEqual({
+      hotfix: "hotfix/{id}-{title:kebab}",
+      release: "release/{currentBranch}",
+    });
+
+    expect(getGitConfigRegexpMock).toHaveBeenCalledWith("^new-branch\\.patterns\\.");
+  });
+
+  it("returns found:true when only patterns exist", async () => {
+    getGitConfigRegexpMock.mockResolvedValue([
+      ["new-branch.patterns.spike", "spike/{title:kebab}"],
+    ]);
+
+    const res = await gitLoader.load();
+
+    expect(res.found).toBe(true);
+    const cfg = res.config as ProjectConfig;
+    expect(cfg.patterns).toEqual({ spike: "spike/{title:kebab}" });
+    expect(cfg.pattern).toBeUndefined();
+    expect(cfg.defaultType).toBeUndefined();
+    expect(cfg.types).toBeUndefined();
+  });
+
+  it("includes patterns alongside other git config fields", async () => {
+    getGitConfigMock.mockImplementation(async (key: string) => {
+      if (key === "new-branch.pattern") return "{type}/{id}";
+      return undefined;
+    });
+
+    getGitConfigRegexpMock.mockResolvedValue([["new-branch.patterns.hotfix", "hotfix/{id}"]]);
+
+    const res = await gitLoader.load();
+
+    expect(res.found).toBe(true);
+    const cfg = res.config as ProjectConfig;
+    expect(cfg.pattern).toBe("{type}/{id}");
+    expect(cfg.patterns).toEqual({ hotfix: "hotfix/{id}" });
+  });
+
+  it("returns found:false when pattern, defaultType, types, and patterns are all missing", async () => {
+    getGitConfigMock.mockResolvedValue(undefined);
+    getGitConfigRegexpMock.mockResolvedValue([]);
+
+    const res = await gitLoader.load();
+
+    expect(res).toEqual({ found: false, source: "git", config: undefined });
   });
 });
