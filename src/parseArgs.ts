@@ -10,6 +10,9 @@ export type ParsedArgs = {
     prompt?: boolean;
     quiet?: boolean;
     help?: boolean;
+    explain?: boolean;
+    listTransforms?: boolean;
+    printConfig?: boolean;
   };
   args: readonly string[];
 };
@@ -32,6 +35,12 @@ export function parseArgs(argv: readonly string[] = process.argv): ParsedArgs {
     .option("--create", "Create branch")
     .option("--no-prompt", "Fail instead of prompting for missing values")
     .option("--quiet", "Suppress non-essential output")
+    .option(
+      "--explain",
+      "Show a detailed breakdown of the branch pipeline without creating a branch",
+    )
+    .option("--list-transforms", "List all available transforms")
+    .option("--print-config", "Print the resolved configuration")
     .help();
 
   const cleaned = stripDoubleDash(argv);
@@ -51,6 +60,9 @@ export function parseArgs(argv: readonly string[] = process.argv): ParsedArgs {
     prompt: typeof opts.prompt === "boolean" ? opts.prompt : undefined,
     quiet: typeof opts.quiet === "boolean" ? opts.quiet : undefined,
     help: typeof opts.help === "boolean" ? opts.help : undefined,
+    explain: typeof opts.explain === "boolean" ? opts.explain : undefined,
+    listTransforms: typeof opts.listTransforms === "boolean" ? opts.listTransforms : undefined,
+    printConfig: typeof opts.printConfig === "boolean" ? opts.printConfig : undefined,
   };
 
   return {

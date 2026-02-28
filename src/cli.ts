@@ -2,11 +2,11 @@
 
 import { parseArgs } from "@/parseArgs.js";
 import { parsePattern } from "@/pattern/parsePattern.js";
-import { defaultTransforms } from "@/pattern/transforms/index.js";
+import { allTransforms, defaultTransforms } from "@/pattern/transforms/index.js";
 import { renderPattern } from "@/pattern/transforms/renderPattern.js";
 import { resolveMissingValues } from "@/runtime/resolveMissingValues.js";
 import { getBuiltinValues } from "@/runtime/builtins.js";
-import { loadConfig } from "@/config/loadConfig.js";
+import { loadConfigWithSource } from "@/config/loadConfig.js";
 import { getGitConfig } from "@/git/gitConfig.js";
 import {
   extractGitBuiltinKeysFromPattern,
@@ -17,6 +17,9 @@ import type { RenderValues } from "@/pattern/transforms/renderPattern.js";
 import { sanitizeGitRef } from "@/git/sanitizeGitRef.js";
 import { validateBranchName } from "@/git/validateBranchName.js";
 import { createBranch } from "@/git/createBranch.js";
+import { listTransforms } from "@/didactic/listTransforms.js";
+import { printConfig } from "@/didactic/printConfig.js";
+import { explain } from "@/didactic/explain.js";
 
 /**
  * Minimal Result type to keep CLI flow as a pipeline without try/catch everywhere.
@@ -106,12 +109,26 @@ export async function run(): Promise<void> {
   if (wantsHelp) {
     return;
   }
+
+  // --- Didactic mode: --list-transforms ---
+  if (args.options.listTransforms) {
+    console.log(listTransforms(allTransforms));
+    return;
+  }
+
   const quiet = args.options.quiet === true;
   const create = args.options.create === true;
   const prompt = args.options.prompt !== false;
+  const isExplain = args.options.explain === true;
 
   // Pipeline: pattern -> AST -> resolve values -> render -> sanitize -> validate -> (optional) git -> output
-  const projectConfig = await loadConfig();
+  const { config: projectConfig, source: configSource } = await loadConfigWithSource();
+
+  // --- Didactic mode: --print-config ---
+  if (args.options.printConfig) {
+    console.log(printConfig(projectConfig, configSource));
+    return;
+  }
 
   // Git config (respects local -> global precedence automatically)
   let gitPattern: string | undefined;
@@ -121,6 +138,13 @@ export async function run(): Promise<void> {
   }
 
   const resolvedPattern = args.options.pattern ?? projectConfig.pattern ?? gitPattern;
+  const patternSource = args.options.pattern
+    ? "CLI --pattern"
+    : projectConfig.pattern
+      ? configSource
+      : gitPattern
+        ? "git config"
+        : "(none)";
   const patternRes = requirePattern(resolvedPattern);
   if (!isOk(patternRes)) fail("Invalid CLI arguments.", patternRes.error);
 
@@ -181,6 +205,25 @@ export async function run(): Promise<void> {
   if (!isOk(renderedRes)) fail("Failed to render branch name.", renderedRes.error);
 
   const sanitized = sanitizeGitRef(renderedRes.value);
+
+  // --- Didactic mode: --explain ---
+  if (isExplain) {
+    console.log(
+      explain({
+        pattern: patternRes.value,
+        patternSource,
+        ast: astRes.value,
+        resolvedValues: valuesRes.value,
+        cliValues: toInitialValues(args),
+        builtinValues,
+        gitValues,
+        rendered: renderedRes.value,
+        sanitized,
+        transforms: defaultTransforms,
+      }),
+    );
+    return;
+  }
 
   const validateRes = await safeAsync(() => validateBranchName(sanitized));
   if (!isOk(validateRes)) fail("Branch name is not valid for git.", validateRes.error);

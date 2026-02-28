@@ -7,9 +7,9 @@ vi.mock("@/parseArgs.js", () => ({
   parseArgs: (...args: unknown[]) => parseArgsMock(...args),
 }));
 
-const loadConfigMock = vi.fn();
+const loadConfigWithSourceMock = vi.fn();
 vi.mock("@/config/loadConfig.js", () => ({
-  loadConfig: (...args: unknown[]) => loadConfigMock(...args),
+  loadConfigWithSource: (...args: unknown[]) => loadConfigWithSourceMock(...args),
 }));
 
 const getGitConfigMock = vi.fn();
@@ -38,8 +38,23 @@ vi.mock("@/pattern/transforms/renderPattern.js", () => ({
 }));
 
 vi.mock("@/pattern/transforms/index.js", () => ({
-  // just needs to exist; not used directly in our renderPattern mock
   defaultTransforms: {},
+  allTransforms: [],
+}));
+
+const listTransformsMock = vi.fn().mockReturnValue("");
+vi.mock("@/didactic/listTransforms.js", () => ({
+  listTransforms: (...args: unknown[]) => listTransformsMock(...args),
+}));
+
+const printConfigMock = vi.fn().mockReturnValue("");
+vi.mock("@/didactic/printConfig.js", () => ({
+  printConfig: (...args: unknown[]) => printConfigMock(...args),
+}));
+
+const explainMock = vi.fn().mockReturnValue("");
+vi.mock("@/didactic/explain.js", () => ({
+  explain: (...args: unknown[]) => explainMock(...args),
 }));
 
 const sanitizeGitRefMock = vi.fn();
@@ -118,7 +133,10 @@ describe("cli.ts (run)", () => {
 
     // Default behavior for dependencies
     parseArgsMock.mockReturnValue(defaultParseArgsReturn());
-    loadConfigMock.mockResolvedValue({ pattern: "{type}/{title}-{id}" });
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: { pattern: "{type}/{title}-{id}" },
+      source: ".newbranchrc.json",
+    });
 
     parsePatternMock.mockReturnValue({
       nodes: [],
@@ -157,7 +175,7 @@ describe("cli.ts (run)", () => {
 
     await expect(run()).resolves.toBeUndefined();
 
-    expect(loadConfigMock).not.toHaveBeenCalled();
+    expect(loadConfigWithSourceMock).not.toHaveBeenCalled();
     expect(getGitConfigMock).not.toHaveBeenCalled();
     expect(getBuiltinValuesMock).not.toHaveBeenCalled();
     expect(patternNeedsGitBuiltinsMock).not.toHaveBeenCalled();
@@ -190,7 +208,7 @@ describe("cli.ts (run)", () => {
 
     await run();
 
-    expect(loadConfigMock).toHaveBeenCalledTimes(1);
+    expect(loadConfigWithSourceMock).toHaveBeenCalledTimes(1);
     expect(getGitConfigMock).not.toHaveBeenCalled();
     expect(getBuiltinValuesMock).toHaveBeenCalledTimes(1);
     expect(patternNeedsGitBuiltinsMock).toHaveBeenCalledWith("{type}/{title}-{id}");
@@ -256,7 +274,10 @@ describe("cli.ts (run)", () => {
       defaultParseArgsReturn({ options: { id: "STK-1", title: "My task", type: "feat" } }),
     );
 
-    loadConfigMock.mockResolvedValue({ pattern: "{type}/{title}-{id}" });
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: { pattern: "{type}/{title}-{id}" },
+      source: ".newbranchrc.json",
+    });
     getGitConfigMock.mockResolvedValue("{id}-{title}");
 
     await run();
@@ -272,7 +293,10 @@ describe("cli.ts (run)", () => {
       defaultParseArgsReturn({ options: { id: "STK-1", title: "My task", type: "feat" } }),
     );
 
-    loadConfigMock.mockResolvedValue({ pattern: undefined });
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: { pattern: undefined },
+      source: "(none)",
+    });
     getGitConfigMock.mockResolvedValue("{type}/{title}-{id}");
 
     await run();
@@ -348,7 +372,10 @@ describe("cli.ts (run)", () => {
   it("fails when no pattern is provided (neither CLI, package.json, nor git config)", async () => {
     setArgv([]);
 
-    loadConfigMock.mockResolvedValue({ pattern: undefined });
+    loadConfigWithSourceMock.mockResolvedValue({
+      config: { pattern: undefined },
+      source: "(none)",
+    });
     getGitConfigMock.mockResolvedValue(undefined);
     parseArgsMock.mockReturnValue(defaultParseArgsReturn({ options: { pattern: undefined } }));
 

@@ -253,6 +253,24 @@ run_cmd "after adds suffix" "pnpm dev -- --pattern '{title:after:-wip}' --title 
 run_cmd "after skips empty" "pnpm dev -- --pattern '{title:remove:all;after:-wip}' --title 'all' --no-prompt" 1 "Invalid git branch name"
 
 echo "
+=== Scenario 14: --list-transforms ==="
+
+run_cmd "list-transforms shows table" "pnpm dev -- --list-transforms" 0 "Available transforms"
+
+echo "
+=== Scenario 15: --print-config ==="
+
+# With a config file present, prints source and pattern
+echo '{"pattern":"{type}/{title}"}' > .newbranchrc.json
+run_cmd "print-config shows source" "pnpm dev -- --print-config" 0 ".newbranchrc.json"
+restore_file .newbranchrc.json
+
+echo "
+=== Scenario 16: --explain ==="
+
+run_cmd "explain shows pipeline breakdown" "pnpm dev -- --explain --pattern '{type}/{title:slugify}' --type feat --title 'Hello World' --no-prompt" 0 "Pipeline"
+
+echo "
 === Cleanup: restore package.json, .newbranchrc.json and git configs ==="
 
 # Restore git configs (local only)

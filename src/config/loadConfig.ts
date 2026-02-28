@@ -18,17 +18,24 @@ import { gitLoader } from "./sources/git.loader.js";
  * No merging is performed.
  */
 export async function loadConfig(): Promise<ProjectConfig> {
-  // Load rc loader first and prefer a non-empty config. Avoid calling the
-  // git loader unless necessary because it depends on external git state
-  // and may import modules that are platform-sensitive.
+  const { config } = await loadConfigWithSource();
+  return config;
+}
+
+/**
+ * Loads the first configuration found and reports which source provided it.
+ */
+export async function loadConfigWithSource(): Promise<{ config: ProjectConfig; source: string }> {
   const rcRes = await rcLoader.load();
-  if (rcRes.found && rcRes.config && Object.keys(rcRes.config).length > 0) return rcRes.config;
+  if (rcRes.found && rcRes.config && Object.keys(rcRes.config).length > 0)
+    return { config: rcRes.config, source: ".newbranchrc.json" };
 
   const pkgRes = await packageJsonLoader.load();
-  if (pkgRes.found && pkgRes.config && Object.keys(pkgRes.config).length > 0) return pkgRes.config;
+  if (pkgRes.found && pkgRes.config && Object.keys(pkgRes.config).length > 0)
+    return { config: pkgRes.config, source: "package.json" };
 
   const gitRes = await gitLoader.load();
-  if (gitRes.found) return gitRes.config ?? {};
+  if (gitRes.found) return { config: gitRes.config ?? {}, source: "git config" };
 
-  return {};
+  return { config: {}, source: "(none)" };
 }
