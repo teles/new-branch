@@ -74,6 +74,34 @@ describe("resolveMissingValues", () => {
     expect(out.type).toBe("feat");
   });
 
+  it("uses provided typeChoices when prompting for `type`", async () => {
+    const parsed = parsePattern("{type}/{id}");
+
+    const projectChoices = [
+      { name: "Release", value: "rc" },
+      { name: "Hotfix", value: "hotfix" },
+    ];
+
+    // Ensure select resolves to the first project's value
+    (select as unknown as Mock).mockResolvedValueOnce("rc");
+
+    const out = await resolveMissingValues(
+      parsed,
+      { id: "42" },
+      { prompt: true, typeChoices: projectChoices },
+    );
+
+    expect(select).toHaveBeenCalledTimes(1);
+    expect(select).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Select branch type:",
+        choices: projectChoices,
+      }),
+    );
+
+    expect(out.type).toBe("rc");
+  });
+
   it("throws when prompt is false and a required variable is missing", async () => {
     const parsed = parsePattern("{id}");
 

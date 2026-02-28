@@ -6,7 +6,7 @@ import { defaultTransforms } from "@/pattern/transforms/index.js";
 import { renderPattern } from "@/pattern/transforms/renderPattern.js";
 import { resolveMissingValues } from "@/runtime/resolveMissingValues.js";
 import { getBuiltinValues } from "@/runtime/builtins.js";
-import { loadProjectConfig } from "./config/loadProjectConfig.js";
+import { loadConfig } from "@/config/loadConfig.js";
 import { getGitConfig } from "@/git/gitConfig.js";
 import {
   extractGitBuiltinKeysFromPattern,
@@ -78,14 +78,31 @@ type Ctx = {
 };
 
 export async function run(): Promise<void> {
-  // Step 0: args/options
-  // Note: CAC prints help, but depending on our parseArgs wrapper we might not
-  // expose `help` in `args.options`. We still want to exit early and never
-  // require a pattern when the user just asked for help.
-  const argv = process.argv.slice(2);
+  // Normalize argv so it works consistently across:
+  // - node dist/cli.js --id 123
+  // - pnpm dev -- --id 123
+  // - tsx src/cli.ts --id 123
+  //
+  // Notes:
+  // - `pnpm` may inject a standalone "--" before the script flags.
+  // - `tsx` puts the script path (e.g. `src/cli.ts`) as the first item in `process.argv.slice(2)`.
+  //   That script path is not a flag, so we strip leading non-flag arguments.
+  let argv = process.argv.slice(2);
+
+  // Strip leading positional entries like `src/cli.ts` (common when running via `tsx`).
+  while (argv.length > 0 && argv[0] !== "--" && !argv[0].startsWith("-")) {
+    argv = argv.slice(1);
+  }
+
+  // Strip standalone "--" injected by pnpm.
+  if (argv[0] === "--") {
+    argv = argv.slice(1);
+  }
+
   const wantsHelp = argv.includes("--help") || argv.includes("-h");
 
-  const args = parseArgs(process.argv);
+  // Important: parseArgs should receive the reconstructed argv
+  const args = parseArgs(["node", "cli", ...argv]);
   if (wantsHelp) {
     return;
   }
@@ -94,7 +111,7 @@ export async function run(): Promise<void> {
   const prompt = args.options.prompt !== false;
 
   // Pipeline: pattern -> AST -> resolve values -> render -> sanitize -> validate -> (optional) git -> output
-  const projectConfig = await loadProjectConfig();
+  const projectConfig = await loadConfig();
 
   // Git config (respects local -> global precedence automatically)
   let gitPattern: string | undefined;
@@ -125,15 +142,32 @@ export async function run(): Promise<void> {
     gitValues = gitRes.value as RenderValues;
   }
 
+  // Resolve `type` from CLI or config, honoring precedence:
+  // 1. CLI --type overrides everything
+  // 2. projectConfig.defaultType (if present)
+  // 3. if only one type is declared, use that as a convenience
+  // 4. otherwise leave undefined so resolveMissingValues will prompt (if prompt===true)
+  let resolvedType = args.options.type ?? projectConfig.defaultType;
+
+  if (!resolvedType && projectConfig.types?.length === 1) {
+    resolvedType = projectConfig.types[0].value;
+  }
+
   const initialValues: RenderValues = {
     ...builtinValues,
     ...gitValues,
     ...toInitialValues(args),
+    type: resolvedType,
   };
 
   const valuesRes = await safeAsync(() =>
     resolveMissingValues(astRes.value, initialValues, {
       prompt,
+      // If project config defines `types`, expose them as choices for the
+      // interactive `type` select so the user sees and can choose project values.
+      typeChoices: projectConfig.types
+        ? projectConfig.types.map((t) => ({ name: t.label, value: t.value }))
+        : undefined,
     }),
   );
   if (!isOk(valuesRes)) fail("Failed to resolve required values.", valuesRes.error);

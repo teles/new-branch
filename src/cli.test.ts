@@ -7,9 +7,9 @@ vi.mock("@/parseArgs.js", () => ({
   parseArgs: (...args: unknown[]) => parseArgsMock(...args),
 }));
 
-const loadProjectConfigMock = vi.fn();
-vi.mock("./config/loadProjectConfig.js", () => ({
-  loadProjectConfig: (...args: unknown[]) => loadProjectConfigMock(...args),
+const loadConfigMock = vi.fn();
+vi.mock("@/config/loadConfig.js", () => ({
+  loadConfig: (...args: unknown[]) => loadConfigMock(...args),
 }));
 
 const getGitConfigMock = vi.fn();
@@ -118,7 +118,7 @@ describe("cli.ts (run)", () => {
 
     // Default behavior for dependencies
     parseArgsMock.mockReturnValue(defaultParseArgsReturn());
-    loadProjectConfigMock.mockResolvedValue({ pattern: "{type}/{title}-{id}" });
+    loadConfigMock.mockResolvedValue({ pattern: "{type}/{title}-{id}" });
 
     parsePatternMock.mockReturnValue({
       nodes: [],
@@ -157,7 +157,7 @@ describe("cli.ts (run)", () => {
 
     await expect(run()).resolves.toBeUndefined();
 
-    expect(loadProjectConfigMock).not.toHaveBeenCalled();
+    expect(loadConfigMock).not.toHaveBeenCalled();
     expect(getGitConfigMock).not.toHaveBeenCalled();
     expect(getBuiltinValuesMock).not.toHaveBeenCalled();
     expect(patternNeedsGitBuiltinsMock).not.toHaveBeenCalled();
@@ -190,7 +190,7 @@ describe("cli.ts (run)", () => {
 
     await run();
 
-    expect(loadProjectConfigMock).toHaveBeenCalledTimes(1);
+    expect(loadConfigMock).toHaveBeenCalledTimes(1);
     expect(getGitConfigMock).not.toHaveBeenCalled();
     expect(getBuiltinValuesMock).toHaveBeenCalledTimes(1);
     expect(patternNeedsGitBuiltinsMock).toHaveBeenCalledWith("{type}/{title}-{id}");
@@ -256,7 +256,7 @@ describe("cli.ts (run)", () => {
       defaultParseArgsReturn({ options: { id: "STK-1", title: "My task", type: "feat" } }),
     );
 
-    loadProjectConfigMock.mockResolvedValue({ pattern: "{type}/{title}-{id}" });
+    loadConfigMock.mockResolvedValue({ pattern: "{type}/{title}-{id}" });
     getGitConfigMock.mockResolvedValue("{id}-{title}");
 
     await run();
@@ -272,7 +272,7 @@ describe("cli.ts (run)", () => {
       defaultParseArgsReturn({ options: { id: "STK-1", title: "My task", type: "feat" } }),
     );
 
-    loadProjectConfigMock.mockResolvedValue({ pattern: undefined });
+    loadConfigMock.mockResolvedValue({ pattern: undefined });
     getGitConfigMock.mockResolvedValue("{type}/{title}-{id}");
 
     await run();
@@ -348,7 +348,7 @@ describe("cli.ts (run)", () => {
   it("fails when no pattern is provided (neither CLI, package.json, nor git config)", async () => {
     setArgv([]);
 
-    loadProjectConfigMock.mockResolvedValue({ pattern: undefined });
+    loadConfigMock.mockResolvedValue({ pattern: undefined });
     getGitConfigMock.mockResolvedValue(undefined);
     parseArgsMock.mockReturnValue(defaultParseArgsReturn({ options: { pattern: undefined } }));
 
