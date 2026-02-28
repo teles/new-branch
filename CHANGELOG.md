@@ -1,3 +1,10 @@
+## [0.8.1](https://github.com/teles/new-branch/compare/v0.8.0...v0.8.1) (2026-02-28)
+
+
+### Bug Fixes
+
+* add timeout to deploy-pages to prevent infinite polling ([fb23193](https://github.com/teles/new-branch/commit/fb231931324d58a47be8045075ca131d2110fa38))
+
 # [0.8.0](https://github.com/teles/new-branch/compare/v0.7.0...v0.8.0) (2026-02-28)
 
 
