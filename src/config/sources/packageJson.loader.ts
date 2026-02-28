@@ -3,10 +3,23 @@ import { join } from "node:path";
 import type { ConfigLoader, LoadResult } from "../types.js";
 import { validateProjectConfigSource, validateProjectConfigFinal } from "../validate.js";
 
+/**
+ * Type guard for Node.js filesystem errors with a `code` property.
+ *
+ * @param e - The caught error value.
+ * @returns `true` if `e` has a `code` property.
+ */
 function isNodeFsError(e: unknown): e is { code?: string } {
   return typeof e === "object" && e !== null && "code" in e;
 }
 
+/**
+ * Config loader that reads the `"new-branch"` key from `package.json`.
+ *
+ * @remarks
+ * Returns `found: false` when `package.json` does not exist or
+ * does not contain a `"new-branch"` key.
+ */
 export const packageJsonLoader: ConfigLoader = {
   source: "package.json",
 

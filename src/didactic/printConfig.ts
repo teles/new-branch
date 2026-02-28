@@ -1,10 +1,15 @@
 import type { ProjectConfig } from "@/config/types.js";
 
 /**
- * Formats the resolved configuration for display.
+ * Formats the resolved project configuration for display.
  *
- * Shows the final resolved values from whichever source took precedence.
- * This is used by the `--print-config` CLI flag.
+ * @remarks
+ * Shows the final resolved values from whichever source took
+ * precedence. Used by the `--print-config` CLI flag.
+ *
+ * @param config - The resolved {@link ProjectConfig}.
+ * @param source - Human-readable label identifying the winning source.
+ * @returns A multi-line formatted string ready to be printed to stdout.
  */
 export function printConfig(config: ProjectConfig, source: string): string {
   const lines: string[] = [];

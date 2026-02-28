@@ -1,9 +1,11 @@
 /**
- * @fileoverview
- * Core types for `new-branch` configuration system.
+ * @module config/types
  *
- * Naming consistency:
- * Always use `new-branch` (never `newBranch` or `newbranch`).
+ * Core types for the `new-branch` configuration system.
+ *
+ * @remarks
+ * Naming consistency: always use `new-branch`
+ * (never `newBranch` or `newbranch`).
  */
 
 /**

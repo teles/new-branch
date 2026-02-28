@@ -1,8 +1,18 @@
 import type { ParsedPattern, PatternNode } from "@/pattern/types.js";
 import type { TransformRegistry } from "@/pattern/transforms/types.js";
 
+/**
+ * A map of variable names to their string values.
+ *
+ * @remarks
+ * Values may be `undefined` when not yet resolved; strict-mode
+ * rendering will throw for any missing value.
+ */
 export type RenderValues = Record<string, string | undefined>;
 
+/**
+ * Options for {@link renderPattern}.
+ */
 export type RenderOptions = {
   /**
    * Map of available transforms by name.
@@ -10,8 +20,10 @@ export type RenderOptions = {
   transforms: TransformRegistry;
 
   /**
-   * When true, throws if a variable is missing in `values`.
-   * When false, missing variables become "".
+   * When `true`, throws if a variable is missing in `values`.
+   * When `false`, missing variables are silently replaced with `""`.
+   *
+   * @defaultValue `true`
    */
   strict?: boolean;
 };
@@ -38,6 +50,15 @@ export function renderPattern(
   return parsed.nodes.map((node) => renderNode(node, values, opts.transforms, strict)).join("");
 }
 
+/**
+ * Renders a node within the pattern AST.
+ *
+ * @param node       - The AST node (literal or variable).
+ * @param values     - Current resolved values.
+ * @param transforms - Transform registry for applying transforms.
+ * @param strict     - Throw on missing values when `true`.
+ * @returns The rendered string for this node.
+ */
 function renderNode(
   node: PatternNode,
   values: RenderValues,

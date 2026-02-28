@@ -2,16 +2,20 @@ import type { TransformDef } from "./types.js";
 import { splitWords } from "./helpers/words.js";
 
 /**
- * Transform: words
+ * Transform: **words**
  *
- * Limits the input to at most `n` words. The transform expects a single
- * numeric argument that indicates the maximum number of words to keep. The
- * returned value is the first `n` words joined by a single space.
+ * @remarks
+ * Limits the input to at most `n` words. The returned value is the
+ * first `n` words joined by a single space.
  *
- * Examples:
- * - `{title:words:2}` applied to "My big title" -> "My big"
+ * Pattern syntax: `{variable:words:n}`
  *
- * @throws If the provided argument is missing or not a non-negative number.
+ * @throws {@link Error} If the argument is missing or not a non-negative number.
+ *
+ * @example
+ * ```ts
+ * words.fn("My big title", ["2"]); // => "My big"
+ * ```
  */
 export const words: TransformDef = {
   name: "words",

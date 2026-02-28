@@ -3,12 +3,27 @@ import { join } from "node:path";
 import type { ConfigLoader, LoadResult } from "../types.js";
 import { validateProjectConfigSource, validateProjectConfigFinal } from "../validate.js";
 
+/** Default filename for the RC configuration file. */
 export const RC_FILENAME = ".newbranchrc.json";
 
+/**
+ * Type guard for Node.js filesystem errors with a `code` property.
+ *
+ * @param e - The caught error value.
+ * @returns `true` if `e` has a `code` property.
+ */
 function isNodeFsError(e: unknown): e is { code?: string } {
   return typeof e === "object" && e !== null && "code" in e;
 }
 
+/**
+ * Config loader that reads from a `.newbranchrc.json` file in the
+ * current working directory.
+ *
+ * @remarks
+ * Returns `found: false` when the RC file does not exist.
+ * Throws for any other filesystem or JSON parse error.
+ */
 export const rcLoader: ConfigLoader = {
   source: "rc",
 

@@ -1,10 +1,14 @@
 import type { TransformDef } from "@/pattern/transforms/types.js";
 
 /**
- * Prints a formatted table of all available transforms.
+ * Formats a human-readable table of all available transforms.
  *
- * Each transform is listed with its name, summary and usage example.
- * This is used by the `--list-transforms` CLI flag.
+ * @remarks
+ * Each transform is listed with its name, summary, and an optional
+ * usage example. Used by the `--list-transforms` CLI flag.
+ *
+ * @param transforms - The ordered list of {@link TransformDef} definitions.
+ * @returns A multi-line formatted string ready to be printed to stdout.
  */
 export function listTransforms(transforms: readonly TransformDef[]): string {
   const lines: string[] = [];

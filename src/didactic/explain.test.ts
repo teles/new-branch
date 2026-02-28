@@ -245,4 +245,36 @@ describe("explain", () => {
     expect(output).toContain('title = "x"');
     expect(output).not.toContain("id = ");
   });
+
+  it("shows max-length info when truncation happened", () => {
+    const output = explain(
+      makeInput({
+        sanitized: "feat/my-feature-very-long-name",
+        maxLength: 15,
+        truncated: "feat/my-feature",
+      }),
+    );
+    expect(output).toContain("Max length:     15");
+    expect(output).toContain("Truncated:      feat/my-feature");
+    expect(output).toContain("Final branch:   feat/my-feature");
+  });
+
+  it("shows max-length info when no truncation needed", () => {
+    const output = explain(
+      makeInput({
+        sanitized: "feat/short",
+        maxLength: 100,
+        truncated: "feat/short",
+      }),
+    );
+    expect(output).toContain("Max length:     100");
+    expect(output).toContain("Truncated:      (no truncation needed)");
+    expect(output).toContain("Final branch:   feat/short");
+  });
+
+  it("does not show max-length section when maxLength is not set", () => {
+    const output = explain(makeInput());
+    expect(output).not.toContain("Max length:");
+    expect(output).not.toContain("Truncated:");
+  });
 });

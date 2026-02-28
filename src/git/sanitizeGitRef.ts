@@ -1,10 +1,28 @@
 /**
- * Performs a lightweight sanitization before delegating
- * full validation to Git.
+ * Performs a lightweight sanitization of a Git ref name.
  *
- * This does NOT try to fully reimplement Git rules.
- * Final validation must be done via:
- *   git check-ref-format --branch
+ * @remarks
+ * This function applies a set of heuristic cleanups to make the input
+ * more likely to pass `git check-ref-format --branch`. It does **not**
+ * fully reimplement all Git ref rules — final validation must still be
+ * delegated to Git itself via {@link validateBranchName}.
+ *
+ * Sanitization steps:
+ * 1. Trim whitespace and replace internal whitespace with `-`.
+ * 2. Remove characters forbidden by Git (`~ ^ : ? * [ ] \`).
+ * 3. Remove `@{` sequences.
+ * 4. Collapse multiple slashes and repeated dots.
+ * 5. Strip leading dashes/slashes and trailing slashes/dots.
+ * 6. Remove `.lock` suffix.
+ *
+ * @param input - The raw ref name to sanitize.
+ * @returns The sanitized ref name.
+ *
+ * @example
+ * ```ts
+ * sanitizeGitRef("feat/My Feature!!"); // => "feat/My-Feature"
+ * sanitizeGitRef("--leading/slash");   // => "leading/slash"
+ * ```
  */
 export function sanitizeGitRef(input: string): string {
   let name = input.trim();

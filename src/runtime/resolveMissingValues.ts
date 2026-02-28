@@ -2,14 +2,19 @@ import type { ParsedPattern } from "@/pattern/types.js";
 import type { RenderValues } from "@/pattern/transforms/renderPattern.js";
 import { TYPE_CHOICES, type EnumChoice } from "@/runtime/enums.js";
 
+/**
+ * Options for {@link resolveMissingValues}.
+ */
 export type ResolveOptions = {
   /**
-   * When false, missing required variables will throw instead of prompting.
+   * When `false`, missing required variables will throw instead of
+   * prompting the user interactively.
    */
   prompt: boolean;
   /**
    * Optional choices to present when prompting for the special `type` variable.
-   * If omitted, {@link TYPE_CHOICES} will be used.
+   *
+   * @defaultValue {@link TYPE_CHOICES}
    */
   typeChoices?: readonly EnumChoice[];
 };
