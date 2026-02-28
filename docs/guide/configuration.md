@@ -30,7 +30,7 @@ new-branch --pattern "{type}/{title:slugify}-{id}" --type feat
 
 ### `.newbranchrc.json`
 
-A JSON file at the root of your repository:
+A JSON file at the root of your repository. You can create one interactively with [`new-branch init`](/guide/init), or write it manually:
 
 ```json
 {

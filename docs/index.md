@@ -20,6 +20,9 @@ features:
   - icon: 🔄
     title: Composable Transforms
     details: Chain transforms like slugify, kebab, max, and replace to shape variable values exactly the way you need.
+  - icon: 🚀
+    title: Init Wizard
+    details: Run new-branch init to bootstrap your .newbranchrc.json interactively with live preview — or use --yes for sensible defaults.
   - icon: ⚙️
     title: Flexible Configuration
     details: Configure via .newbranchrc.json, package.json, or git config. CLI flags always take precedence.

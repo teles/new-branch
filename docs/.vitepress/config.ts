@@ -38,6 +38,7 @@ export default defineConfig({
         {
           text: "Features",
           items: [
+            { text: "Init Wizard", link: "/guide/init" },
             { text: "Interactive Mode", link: "/guide/interactive-mode" },
             { text: "Didactic Modes", link: "/guide/didactic-modes" },
           ],

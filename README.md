@@ -29,9 +29,22 @@ npm install -g new-branch
 
 ## Quick Start
 
+Bootstrap a `.newbranchrc.json` config interactively:
+
+```bash
+new-branch init
+```
+
+Or accept all defaults in one shot:
+
+```bash
+new-branch init --yes
+```
+
+Then generate branch names:
+
 ```bash
 new-branch \
-  --pattern "{type}/{title:slugify;max:25}-{id}" \
   --type feat \
   --title "Add login page" \
   --id PROJ-123 \
@@ -42,7 +55,7 @@ new-branch \
 ✅ Branch created and switched to: feat/add-login-page-PROJ-123
 ```
 
-Save your pattern so you don't have to type it every time:
+You can also pass a pattern inline:
 
 ```json
 {
@@ -58,6 +71,7 @@ Save your pattern so you don't have to type it every time:
 
 - **Pattern language** — declarative syntax with variables, transforms, and arguments
 - **16 built-in transforms** — `slugify`, `kebab`, `camel`, `max`, `replace`, `stripAccents`, and more
+- **Interactive init wizard** — `new-branch init` bootstraps your config with live preview
 - **Flexible config** — `.newbranchrc.json`, `package.json`, or `git config`
 - **Pattern aliases** — define named patterns and switch with `--use feature`
 - **Interactive mode** — prompts for missing values, disable with `--no-prompt`
@@ -69,6 +83,7 @@ Save your pattern so you don't have to type it every time:
 | Section                                                                     | Description                          |
 | --------------------------------------------------------------------------- | ------------------------------------ |
 | [Getting Started](https://teles.github.io/new-branch/guide/getting-started) | Installation and first branch        |
+| [Init Wizard](https://teles.github.io/new-branch/guide/init)                | Bootstrap config interactively       |
 | [Patterns](https://teles.github.io/new-branch/guide/patterns)               | Pattern language syntax and examples |
 | [Transforms](https://teles.github.io/new-branch/guide/transforms)           | All 16 transforms with I/O tables    |
 | [Configuration](https://teles.github.io/new-branch/guide/configuration)     | Config sources and precedence        |
