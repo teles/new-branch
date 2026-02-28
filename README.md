@@ -66,15 +66,15 @@ Save your pattern so you don't have to type it every time:
 
 ## Documentation
 
-| Section | Description |
-|---------|-------------|
-| [Getting Started](https://teles.github.io/new-branch/guide/getting-started) | Installation and first branch |
-| [Patterns](https://teles.github.io/new-branch/guide/patterns) | Pattern language syntax and examples |
-| [Transforms](https://teles.github.io/new-branch/guide/transforms) | All 16 transforms with I/O tables |
-| [Configuration](https://teles.github.io/new-branch/guide/configuration) | Config sources and precedence |
-| [Pattern Aliases](https://teles.github.io/new-branch/guide/pattern-aliases) | Named patterns with `--use` |
-| [CLI Reference](https://teles.github.io/new-branch/reference/cli-options) | All flags and options |
-| [Recipes](https://teles.github.io/new-branch/recipes/github-flow) | GitHub Flow, Gitflow, Monorepo |
+| Section                                                                     | Description                          |
+| --------------------------------------------------------------------------- | ------------------------------------ |
+| [Getting Started](https://teles.github.io/new-branch/guide/getting-started) | Installation and first branch        |
+| [Patterns](https://teles.github.io/new-branch/guide/patterns)               | Pattern language syntax and examples |
+| [Transforms](https://teles.github.io/new-branch/guide/transforms)           | All 16 transforms with I/O tables    |
+| [Configuration](https://teles.github.io/new-branch/guide/configuration)     | Config sources and precedence        |
+| [Pattern Aliases](https://teles.github.io/new-branch/guide/pattern-aliases) | Named patterns with `--use`          |
+| [CLI Reference](https://teles.github.io/new-branch/reference/cli-options)   | All flags and options                |
+| [Recipes](https://teles.github.io/new-branch/recipes/github-flow)           | GitHub Flow, Gitflow, Monorepo       |
 
 ## Development
 
