@@ -4,10 +4,24 @@ set -euo pipefail
 ROOT_DIR=$(pwd)
 echo "Running repository-wide CLI config tests in: $ROOT_DIR"
 
+# --- Preserve NVM_DIR before sandboxing HOME ---
+if [ -z "${NVM_DIR:-}" ]; then
+  export NVM_DIR="$HOME/.nvm"
+fi
+
 # --- Sandbox git global config so we never touch the real user config ---
 SANDBOX_HOME=$(mktemp -d)
 export HOME="$SANDBOX_HOME"
 export GIT_CONFIG_GLOBAL="$SANDBOX_HOME/.gitconfig"
+
+# Source nvm so bash -lc subshells get the right Node version
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh"
+  nvm use 2>/dev/null || true
+fi
+
+# Capture the correct PATH with nvm's node so subshells inherit it
+export PATH
 
 # Prepare machine-readable results (ndjson -> later converted to JSON array)
 rm -f tests_results.ndjson tests_results.json
@@ -28,7 +42,7 @@ run_cmd() {
   out=$(mktemp)
 
   set +e
-  bash -lc "$cmd" >"$out" 2>&1
+  bash -c "$cmd" >"$out" 2>&1
   local rc=$?
   set -e
 
@@ -196,6 +210,47 @@ echo "
 === Scenario 6: --no-prompt fails when required value missing ==="
 
 run_cmd "no-prompt missing id" "pnpm dev -- --pattern '{type}/{id}' --no-prompt" 1 'Missing required value: "id"'
+
+echo "
+=== Scenario 7: transform — replace (first occurrence) ==="
+
+run_cmd "replace first occurrence" "pnpm dev -- --pattern '{title:replace:foo:bar}' --title 'foo-baz-foo' --no-prompt" 0 "bar-baz-foo"
+
+echo "
+=== Scenario 8: transform — replaceAll (all occurrences) ==="
+
+run_cmd "replaceAll all occurrences" "pnpm dev -- --pattern '{title:replaceAll:foo:bar}' --title 'foo-baz-foo' --no-prompt" 0 "bar-baz-bar"
+
+echo "
+=== Scenario 9: transform — remove (all occurrences) ==="
+
+run_cmd "remove substring" "pnpm dev -- --pattern '{title:remove:temp}' --title 'my-temp-branch-temp' --no-prompt" 0 "my--branch-"
+
+echo "
+=== Scenario 10: transform — stripAccents ==="
+
+run_cmd "stripAccents diacritics" "pnpm dev -- --pattern '{title:stripAccents;slugify}' --title 'José café' --no-prompt" 0 "jose-cafe"
+
+echo "
+=== Scenario 11: transform — ifEmpty (fallback when empty) ==="
+
+run_cmd "ifEmpty uses fallback" "pnpm dev -- --pattern '{title:remove:all;ifEmpty:no-title}' --title 'all' --no-prompt" 0 "no-title"
+
+run_cmd "ifEmpty keeps value" "pnpm dev -- --pattern '{title:ifEmpty:no-title}' --title 'hello' --no-prompt" 0 "hello"
+
+echo "
+=== Scenario 12: transform — before (prefix if not empty) ==="
+
+run_cmd "before adds prefix" "pnpm dev -- --pattern '{title:before:hotfix-}' --title 'fix-123' --no-prompt" 0 "hotfix-fix-123"
+
+run_cmd "before skips empty" "pnpm dev -- --pattern '{title:remove:all;before:hotfix-}' --title 'all' --no-prompt" 1 "Invalid git branch name"
+
+echo "
+=== Scenario 13: transform — after (suffix if not empty) ==="
+
+run_cmd "after adds suffix" "pnpm dev -- --pattern '{title:after:-wip}' --title 'feature' --no-prompt" 0 "feature-wip"
+
+run_cmd "after skips empty" "pnpm dev -- --pattern '{title:remove:all;after:-wip}' --title 'all' --no-prompt" 1 "Invalid git branch name"
 
 echo "
 === Cleanup: restore package.json, .newbranchrc.json and git configs ==="
