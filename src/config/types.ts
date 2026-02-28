@@ -34,6 +34,12 @@ export type ProjectConfig = {
   pattern?: string;
 
   /**
+   * Named pattern aliases.
+   * Keys are alias names (e.g. "hotfix", "release"), values are pattern strings.
+   */
+  patterns?: Record<string, string>;
+
+  /**
    * Available branch types.
    */
   types?: BranchType[];
