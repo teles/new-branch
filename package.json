@@ -42,9 +42,6 @@
   "bugs": {
     "url": "https://github.com/teles/new-branch/issues"
   },
-  "new-branch": {
-    "pattern": "{type}/{title:lower}-{id}"
-  },
   "homepage": "https://github.com/teles/new-branch#readme",
   "packageManager": "pnpm@10.22.0",
   "devDependencies": {
