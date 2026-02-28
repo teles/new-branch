@@ -32,6 +32,7 @@ import { createBranch } from "@/git/createBranch.js";
 import { listTransforms } from "@/didactic/listTransforms.js";
 import { printConfig } from "@/didactic/printConfig.js";
 import { explain } from "@/didactic/explain.js";
+import { runInit } from "@/init/runInit.js";
 
 /**
  * Success variant of the {@link Result} union.
@@ -186,6 +187,16 @@ export async function run(): Promise<void> {
   // - `tsx` puts the script path (e.g. `src/cli.ts`) as the first item in `process.argv.slice(2)`.
   //   That script path is not a flag, so we strip leading non-flag arguments.
   let argv = process.argv.slice(2);
+
+  // --- Subcommand: init ---
+  // Check before stripping positional entries so "init" is not removed.
+  const initIdx = argv.indexOf("init");
+  if (initIdx !== -1) {
+    const initArgv = argv.slice(initIdx + 1);
+    const yes = initArgv.includes("--yes") || initArgv.includes("-y");
+    await runInit({ yes });
+    return;
+  }
 
   // Strip leading positional entries like `src/cli.ts` (common when running via `tsx`).
   while (argv.length > 0 && argv[0] !== "--" && !argv[0].startsWith("-")) {
