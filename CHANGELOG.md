@@ -1,3 +1,10 @@
+# [0.8.0](https://github.com/teles/new-branch/compare/v0.7.0...v0.8.0) (2026-02-28)
+
+
+### Features
+
+* add --max-length / -L option for deterministic branch name truncation ([f5c4aa5](https://github.com/teles/new-branch/commit/f5c4aa5c5551488c0251ba7234930b660a76a885))
+
 # [0.7.0](https://github.com/teles/new-branch/compare/v0.6.0...v0.7.0) (2026-02-28)
 
 
