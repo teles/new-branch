@@ -79,20 +79,12 @@ describe("buildPattern", () => {
   });
 
   it("handles multiple transforms with semicolons", () => {
-    const result = buildPattern(
-      ["type", "title"],
-      { title: "slugify;max:30" },
-      ["/"],
-    );
+    const result = buildPattern(["type", "title"], { title: "slugify;max:30" }, ["/"]);
     expect(result).toBe("{type}/{title:slugify;max:30}");
   });
 
   it("handles multiple separators", () => {
-    const result = buildPattern(
-      ["type", "id", "title"],
-      { title: "slugify" },
-      ["/", "-"],
-    );
+    const result = buildPattern(["type", "id", "title"], { title: "slugify" }, ["/", "-"]);
     expect(result).toBe("{type}/{id}-{title:slugify}");
   });
 

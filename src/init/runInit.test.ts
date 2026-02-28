@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { existsSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 
 // ---- Mocks ----
 
@@ -9,7 +9,13 @@ vi.mock("node:fs", () => ({
 }));
 
 vi.mock("node:fs/promises", () => ({
+  readFile: vi.fn(),
   writeFile: vi.fn(),
+}));
+
+const execaMock = vi.fn();
+vi.mock("execa", () => ({
+  execa: (...args: unknown[]) => execaMock(...args),
 }));
 
 const confirmMock = vi.fn();
@@ -35,6 +41,7 @@ import { runInit } from "./runInit.js";
 
 const existsSyncMock = existsSync as unknown as ReturnType<typeof vi.fn>;
 const writeFileMock = writeFile as unknown as ReturnType<typeof vi.fn>;
+const readFileMock = readFile as unknown as ReturnType<typeof vi.fn>;
 
 describe("runInit", () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
@@ -44,6 +51,8 @@ describe("runInit", () => {
     vi.clearAllMocks();
     existsSyncMock.mockReturnValue(false);
     writeFileMock.mockResolvedValue(undefined);
+    readFileMock.mockRejectedValue(new Error("ENOENT"));
+    execaMock.mockResolvedValue({ stdout: "" });
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
       throw new Error("process.exit called");
@@ -56,7 +65,7 @@ describe("runInit", () => {
   });
 
   describe("--yes mode (non-interactive)", () => {
-    it("writes default config without prompting", async () => {
+    it("writes default config to .newbranchrc.json without prompting", async () => {
       await runInit({ yes: true, cwd: "/tmp/test" });
 
       expect(confirmMock).not.toHaveBeenCalled();
@@ -84,9 +93,79 @@ describe("runInit", () => {
     });
   });
 
+  describe("config target selection", () => {
+    it("prompts for config target in interactive mode", async () => {
+      // Target: .newbranchrc.json
+      selectMock.mockResolvedValueOnce("rc");
+      // Minimal wizard
+      checkboxMock.mockResolvedValueOnce(["title"]);
+      selectMock.mockResolvedValueOnce("slugify");
+      confirmMock.mockResolvedValueOnce(false); // no types
+      confirmMock.mockResolvedValueOnce(false); // no aliases
+      confirmMock.mockResolvedValueOnce(true); // write
+
+      await runInit({ cwd: "/tmp/test" });
+
+      expect(selectMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining("Where do you want to save"),
+        }),
+      );
+      expect(writeFileMock).toHaveBeenCalledOnce();
+      const [path] = writeFileMock.mock.calls[0];
+      expect(path).toContain(".newbranchrc.json");
+    });
+
+    it("writes to package.json when selected", async () => {
+      readFileMock.mockResolvedValueOnce(JSON.stringify({ name: "my-project", version: "1.0.0" }));
+      // Target: package.json
+      selectMock.mockResolvedValueOnce("package.json");
+      // Minimal wizard
+      checkboxMock.mockResolvedValueOnce(["title"]);
+      selectMock.mockResolvedValueOnce("kebab");
+      confirmMock.mockResolvedValueOnce(false); // no types
+      confirmMock.mockResolvedValueOnce(false); // no aliases
+      confirmMock.mockResolvedValueOnce(true); // write
+
+      await runInit({ cwd: "/tmp/test" });
+
+      expect(writeFileMock).toHaveBeenCalledOnce();
+      const [path, content] = writeFileMock.mock.calls[0];
+      expect(path).toContain("package.json");
+      const pkg = JSON.parse(content);
+      expect(pkg.name).toBe("my-project");
+      expect(pkg["new-branch"]).toBeDefined();
+      expect(pkg["new-branch"].pattern).toBe("{title:kebab}");
+    });
+
+    it("writes to git config when selected", async () => {
+      // Target: git config
+      selectMock.mockResolvedValueOnce("git");
+      // Minimal wizard
+      checkboxMock.mockResolvedValueOnce(["type", "title"]);
+      selectMock.mockResolvedValueOnce("/");
+      selectMock.mockResolvedValueOnce("slugify");
+      confirmMock.mockResolvedValueOnce(false); // no types
+      confirmMock.mockResolvedValueOnce(false); // no aliases
+      confirmMock.mockResolvedValueOnce(true); // write
+
+      await runInit({ cwd: "/tmp/test" });
+
+      expect(writeFileMock).not.toHaveBeenCalled();
+      expect(execaMock).toHaveBeenCalledWith("git", [
+        "config",
+        "--local",
+        "new-branch.pattern",
+        "{type}/{title:slugify}",
+      ]);
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("git config"));
+    });
+  });
+
   describe("existing config detection", () => {
-    it("asks to overwrite when config exists", async () => {
+    it("asks to overwrite when rc config exists", async () => {
       existsSyncMock.mockReturnValue(true);
+      selectMock.mockResolvedValueOnce("rc"); // target
       confirmMock.mockResolvedValueOnce(false); // Don't overwrite
 
       await runInit({ cwd: "/tmp/test" });
@@ -100,11 +179,29 @@ describe("runInit", () => {
       expect(logSpy).toHaveBeenCalledWith("Aborted.");
     });
 
+    it("skips overwrite check for git config target", async () => {
+      existsSyncMock.mockReturnValue(true);
+      selectMock.mockResolvedValueOnce("git"); // target
+      // Minimal wizard (no overwrite prompt expected)
+      checkboxMock.mockResolvedValueOnce(["title"]);
+      selectMock.mockResolvedValueOnce("slugify");
+      confirmMock.mockResolvedValueOnce(false); // no types
+      confirmMock.mockResolvedValueOnce(false); // no aliases
+      confirmMock.mockResolvedValueOnce(true); // write
+
+      await runInit({ cwd: "/tmp/test" });
+
+      // First confirm should NOT be about overwriting
+      expect(confirmMock.mock.calls[0][0].message).not.toMatch(/already exists/);
+      expect(execaMock).toHaveBeenCalled();
+    });
+
     it("proceeds when user confirms overwrite", async () => {
       existsSyncMock.mockReturnValue(true);
+      selectMock.mockResolvedValueOnce("rc"); // target
       // Overwrite: yes
       confirmMock.mockResolvedValueOnce(true);
-      // Build interactive config — provide minimal wizard answers
+      // Build interactive config
       checkboxMock.mockResolvedValueOnce(["type", "title"]);
       selectMock.mockResolvedValueOnce("/"); // separator
       selectMock.mockResolvedValueOnce("slugify"); // transform
@@ -123,11 +220,12 @@ describe("runInit", () => {
 
   describe("interactive wizard", () => {
     it("builds config from wizard answers", async () => {
+      selectMock.mockResolvedValueOnce("rc"); // target
       // Select variables
       checkboxMock.mockResolvedValueOnce(["type", "title", "id"]);
       // Separators (2 separators for 3 variables)
-      selectMock.mockResolvedValueOnce("/");  // between type and title
-      selectMock.mockResolvedValueOnce("-");  // between title and id
+      selectMock.mockResolvedValueOnce("/"); // between type and title
+      selectMock.mockResolvedValueOnce("-"); // between title and id
       // Transforms for title (type and id are not text vars)
       selectMock.mockResolvedValueOnce("slugify");
       // Define types? yes
@@ -159,6 +257,7 @@ describe("runInit", () => {
     });
 
     it("aborts when user declines to write", async () => {
+      selectMock.mockResolvedValueOnce("rc"); // target
       checkboxMock.mockResolvedValueOnce(["type", "title"]);
       selectMock.mockResolvedValueOnce("/");
       selectMock.mockResolvedValueOnce("slugify");
@@ -173,6 +272,7 @@ describe("runInit", () => {
     });
 
     it("exits when no variables selected", async () => {
+      selectMock.mockResolvedValueOnce("rc"); // target
       checkboxMock.mockResolvedValueOnce([]);
 
       await expect(runInit({ cwd: "/tmp/test" })).rejects.toThrow("process.exit");
@@ -180,6 +280,7 @@ describe("runInit", () => {
     });
 
     it("handles aliased patterns", async () => {
+      selectMock.mockResolvedValueOnce("rc"); // target
       checkboxMock.mockResolvedValueOnce(["type", "title"]);
       selectMock.mockResolvedValueOnce("/");
       selectMock.mockResolvedValueOnce("kebab");
@@ -206,6 +307,7 @@ describe("runInit", () => {
     });
 
     it("handles transform with max length prompt", async () => {
+      selectMock.mockResolvedValueOnce("rc"); // target
       checkboxMock.mockResolvedValueOnce(["title"]);
       // No separators needed (single var)
       // Transform with max
@@ -213,13 +315,36 @@ describe("runInit", () => {
       inputMock.mockResolvedValueOnce("50"); // max length
       confirmMock.mockResolvedValueOnce(false); // no types
       confirmMock.mockResolvedValueOnce(false); // no aliases
-      confirmMock.mockResolvedValueOnce(true);  // write
+      confirmMock.mockResolvedValueOnce(true); // write
 
       await runInit({ cwd: "/tmp/test" });
 
       const [, content] = writeFileMock.mock.calls[0];
       const config = JSON.parse(content);
       expect(config.pattern).toBe("{title:slugify;max:50}");
+    });
+
+    it("writes pattern aliases as separate git config keys", async () => {
+      selectMock.mockResolvedValueOnce("git"); // target
+      checkboxMock.mockResolvedValueOnce(["type", "title"]);
+      selectMock.mockResolvedValueOnce("/");
+      selectMock.mockResolvedValueOnce("slugify");
+      confirmMock.mockResolvedValueOnce(false); // no types
+      // Define aliases? yes
+      confirmMock.mockResolvedValueOnce(true);
+      inputMock.mockResolvedValueOnce("hotfix");
+      inputMock.mockResolvedValueOnce("hotfix/{title:slugify}");
+      confirmMock.mockResolvedValueOnce(false); // no more aliases
+      confirmMock.mockResolvedValueOnce(true); // write
+
+      await runInit({ cwd: "/tmp/test" });
+
+      expect(execaMock).toHaveBeenCalledWith("git", [
+        "config",
+        "--local",
+        "new-branch.patterns.hotfix",
+        "hotfix/{title:slugify}",
+      ]);
     });
   });
 });
