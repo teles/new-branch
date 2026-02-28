@@ -3,6 +3,7 @@ import { cac } from "cac";
 export type ParsedArgs = {
   options: {
     pattern?: string;
+    use?: string;
     id?: string;
     title?: string;
     type?: string;
@@ -29,6 +30,7 @@ export function parseArgs(argv: readonly string[] = process.argv): ParsedArgs {
 
   cli
     .option("-p, --pattern <pattern>", "Branch pattern")
+    .option("--use <name>", "Use a named pattern alias from configuration")
     .option("--id <id>", "Task id")
     .option("--title <title>", "Task title")
     .option("--type <type>", "Branch type")
@@ -51,6 +53,7 @@ export function parseArgs(argv: readonly string[] = process.argv): ParsedArgs {
   const options: ParsedArgs["options"] = {
     // Accept numeric or string-like values and coerce to string when present.
     pattern: opts.pattern !== undefined ? String(opts.pattern) : undefined,
+    use: opts.use !== undefined ? String(opts.use) : undefined,
     id: opts.id !== undefined ? String(opts.id) : undefined,
     title: opts.title !== undefined ? String(opts.title) : undefined,
     type: opts.type !== undefined ? String(opts.type) : undefined,
