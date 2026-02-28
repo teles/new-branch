@@ -1,24 +1,26 @@
 /**
  * @module init/runInit
  *
- * Interactive wizard that walks the user through creating a `.newbranchrc.json`
- * configuration file.
+ * Interactive wizard that walks the user through creating a `new-branch`
+ * configuration, written to the target of the user's choice.
  *
  * @remarks
  * The wizard flow:
- * 1. Detect existing config → offer to overwrite or abort
- * 2. Select variables to include in the pattern
- * 3. Choose separators between variables
- * 4. Choose transforms (for title and other text variables)
- * 5. Show live preview
- * 6. Optionally define branch types
- * 7. Optionally define pattern aliases
- * 8. Show final config → write to disk
+ * 1. Choose config target (`.newbranchrc.json`, `package.json`, or `git config`)
+ * 2. Detect existing config → offer to overwrite or abort
+ * 3. Select variables to include in the pattern
+ * 4. Choose separators between variables
+ * 5. Choose transforms (for title and other text variables)
+ * 6. Show live preview
+ * 7. Optionally define branch types
+ * 8. Optionally define pattern aliases
+ * 9. Show final config → write to chosen target
  */
 
 import { existsSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { execa } from "execa";
 import { input, select, confirm, checkbox } from "@inquirer/prompts";
 import type { ProjectConfig, BranchType } from "@/config/types.js";
 import { validateProjectConfigFinal } from "@/config/validate.js";
@@ -30,7 +32,12 @@ import {
 } from "@/init/defaults.js";
 import { renderPreview } from "@/init/preview.js";
 
-const CONFIG_FILE = ".newbranchrc.json";
+const RC_FILE = ".newbranchrc.json";
+
+/**
+ * Where the config should be written.
+ */
+export type ConfigTarget = "rc" | "package.json" | "git";
 
 /**
  * Options for {@link runInit}.
@@ -49,20 +56,39 @@ export type InitOptions = {
  */
 export async function runInit(options: InitOptions = {}): Promise<void> {
   const cwd = options.cwd ?? process.cwd();
-  const configPath = resolve(cwd, CONFIG_FILE);
 
-  // Step 0: Detect existing config
-  if (existsSync(configPath)) {
-    if (options.yes) {
-      console.log(`⚠️  Overwriting existing ${CONFIG_FILE}`);
-    } else {
-      const overwrite = await confirm({
-        message: `${CONFIG_FILE} already exists. Overwrite?`,
-        default: false,
+  // Step 0: Choose config target
+  const target: ConfigTarget = options.yes
+    ? "rc"
+    : await select({
+        message: "Where do you want to save the configuration?",
+        choices: [
+          { name: ".newbranchrc.json — Dedicated config file", value: "rc" as ConfigTarget },
+          {
+            name: 'package.json — Under the "new-branch" key',
+            value: "package.json" as ConfigTarget,
+          },
+          { name: "git config — Local repo git config", value: "git" as ConfigTarget },
+        ],
+        default: "rc" as ConfigTarget,
       });
-      if (!overwrite) {
-        console.log("Aborted.");
-        return;
+
+  // Step 1: Detect existing config
+  if (target !== "git") {
+    const filePath = resolve(cwd, target === "rc" ? RC_FILE : "package.json");
+    if (existsSync(filePath)) {
+      if (options.yes) {
+        console.log(`⚠️  Overwriting existing ${target === "rc" ? RC_FILE : "package.json"}`);
+      } else {
+        const label = target === "rc" ? RC_FILE : `"new-branch" key in package.json`;
+        const overwrite = await confirm({
+          message: `${label} already exists. Overwrite?`,
+          default: false,
+        });
+        if (!overwrite) {
+          console.log("Aborted.");
+          return;
+        }
       }
     }
   }
@@ -85,8 +111,10 @@ export async function runInit(options: InitOptions = {}): Promise<void> {
   console.log(json);
 
   if (!options.yes) {
+    const targetLabel =
+      target === "rc" ? RC_FILE : target === "package.json" ? "package.json" : "git config (local)";
     const proceed = await confirm({
-      message: `Write to ${CONFIG_FILE}?`,
+      message: `Write to ${targetLabel}?`,
       default: true,
     });
     if (!proceed) {
@@ -95,8 +123,81 @@ export async function runInit(options: InitOptions = {}): Promise<void> {
     }
   }
 
-  await writeFile(configPath, json, "utf-8");
-  console.log(`✅ Written to ${CONFIG_FILE}`);
+  await writeConfig(config, target, cwd);
+}
+
+/**
+ * Writes the config to the chosen target.
+ *
+ * @param config - The validated project config.
+ * @param target - Where to write the config.
+ * @param cwd    - Working directory.
+ */
+async function writeConfig(
+  config: ProjectConfig,
+  target: ConfigTarget,
+  cwd: string,
+): Promise<void> {
+  switch (target) {
+    case "rc": {
+      const rcPath = resolve(cwd, RC_FILE);
+      const json = JSON.stringify(config, null, 2) + "\n";
+      await writeFile(rcPath, json, "utf-8");
+      console.log(`✅ Written to ${RC_FILE}`);
+      break;
+    }
+
+    case "package.json": {
+      const pkgPath = resolve(cwd, "package.json");
+      let pkg: Record<string, unknown> = {};
+      try {
+        const raw = await readFile(pkgPath, "utf-8");
+        pkg = JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        // package.json doesn't exist yet — we'll create one
+      }
+      pkg["new-branch"] = config;
+      const json = JSON.stringify(pkg, null, 2) + "\n";
+      await writeFile(pkgPath, json, "utf-8");
+      console.log(`✅ Written to package.json ("new-branch" key)`);
+      break;
+    }
+
+    case "git": {
+      await writeGitConfig(config);
+      console.log("✅ Written to git config (local)");
+      break;
+    }
+  }
+}
+
+/**
+ * Writes config values as local git config entries under the `new-branch.*` namespace.
+ *
+ * @remarks
+ * git config only supports flat key-value pairs, so:
+ * - `pattern` → `new-branch.pattern`
+ * - `defaultType` → `new-branch.defaultType`
+ * - `types` and `patterns` → serialized as JSON strings
+ *
+ * @param config - The project config to write.
+ */
+async function writeGitConfig(config: ProjectConfig): Promise<void> {
+  if (config.pattern) {
+    await execa("git", ["config", "--local", "new-branch.pattern", config.pattern]);
+  }
+  if (config.defaultType) {
+    await execa("git", ["config", "--local", "new-branch.defaultType", config.defaultType]);
+  }
+  if (config.types && config.types.length > 0) {
+    await execa("git", ["config", "--local", "new-branch.types", JSON.stringify(config.types)]);
+  }
+  if (config.patterns && Object.keys(config.patterns).length > 0) {
+    // Write each alias as a separate key for readability
+    for (const [alias, pattern] of Object.entries(config.patterns)) {
+      await execa("git", ["config", "--local", `new-branch.patterns.${alias}`, pattern]);
+    }
+  }
 }
 
 /**
