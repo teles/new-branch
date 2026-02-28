@@ -1,3 +1,17 @@
+# [0.7.0](https://github.com/teles/new-branch/compare/v0.6.0...v0.7.0) (2026-02-28)
+
+
+### Features
+
+* **cli:** add --explain, --list-transforms and --print-config ([de74b9a](https://github.com/teles/new-branch/commit/de74b9adedaf2564e831810a3883a831cc36fd0e)), closes [#13](https://github.com/teles/new-branch/issues/13)
+* **cli:** add --use option to argument parser ([668cd4b](https://github.com/teles/new-branch/commit/668cd4b97272b9e3d340b0d5a2e720b8e47a46fa)), closes [#12](https://github.com/teles/new-branch/issues/12)
+* **cli:** resolve --use alias in branch pattern pipeline ([4ae1b35](https://github.com/teles/new-branch/commit/4ae1b35beb9aa0515460a83512f3840da6f7c291)), closes [#12](https://github.com/teles/new-branch/issues/12)
+* **config:** add patterns field to ProjectConfig type ([414ea47](https://github.com/teles/new-branch/commit/414ea477c1f820014d7f5e64f8330a42334102a6)), closes [#12](https://github.com/teles/new-branch/issues/12)
+* **config:** support patterns in git config loader ([d105994](https://github.com/teles/new-branch/commit/d105994b9030853aa430b522149ecb76005dc3fa)), closes [#12](https://github.com/teles/new-branch/issues/12)
+* **config:** validate patterns field in config source ([fdf6293](https://github.com/teles/new-branch/commit/fdf6293feea4e13b703089d6638594ad98dfc227)), closes [#12](https://github.com/teles/new-branch/issues/12)
+* **git:** add getGitConfigRegexp for multi-key git config ([a539c06](https://github.com/teles/new-branch/commit/a539c064536d149640da5074665d3078e564d641)), closes [#12](https://github.com/teles/new-branch/issues/12)
+* **transforms:** add replace, replaceAll, remove, stripAccents, ifEmpty, before, after transforms ([8ff8d8e](https://github.com/teles/new-branch/commit/8ff8d8e06216629822564d854d815830e08c5f6b)), closes [#14](https://github.com/teles/new-branch/issues/14)
+
 # [0.6.0](https://github.com/teles/new-branch/compare/v0.5.0...v0.6.0) (2026-02-28)
 
 
