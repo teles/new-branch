@@ -177,31 +177,63 @@ Disable prompts with:
 
 ---
 
-## Project Configuration
+## Project Configuration and precedence
 
-You can define a default pattern in `package.json`:
+Configuration for `new-branch` may come from several places. The CLI resolves the first _non-empty_ configuration it finds according to the following precedence (highest → lowest):
+
+1. CLI flags (explicit `--pattern`, `--type`, etc.)
+2. `.newbranchrc.json` (a repository-local JSON config file)
+3. `package.json` under the `new-branch` key
+4. Git config (`new-branch.pattern`) — local then global
+5. Interactive prompt (only if enabled and a value is still missing)
+
+This means that if a higher-precedence source provides a non-empty value, lower-precedence sources are not consulted or merged.
+
+Examples
+
+1. `.newbranchrc.json` (preferred when present and non-empty):
+
+```json
+{
+  "pattern": "{type}/{title:slugify}-{id}",
+  "types": [
+    { "value": "feat", "label": "Feature" },
+    { "value": "fix", "label": "Fix" }
+  ],
+  "defaultType": "feat"
+}
+```
+
+2. `package.json` fallback:
 
 ```json
 {
   "new-branch": {
-    "pattern": "{type}/{title:slugify}-{id}"
+    "pattern": "{type}/{title:slugify}-{id}",
+    "defaultType": "fix"
   }
 }
 ```
 
-### Git Configuration
-
-You can also define a default pattern using Git config:
+3. Git config fallback (local takes precedence over global):
 
 ```bash
 git config --local new-branch.pattern "{type}/{title:slugify}-{id}"
-```
-
-Or globally:
-
-```bash
 git config --global new-branch.pattern "{type}/{title:slugify}-{id}"
 ```
+
+Notes about `type` and `defaultType`
+
+- Order for resolving the branch `type` follows the SPEC behavior we implemented:
+  1. CLI `--type` (explicit flag) overrides everything.
+  2. `defaultType` from the selected configuration source is used next (if present).
+  3. If the project config declares exactly one `type` in `types[]`, that single type is used as a convenience.
+  4. If the type is still not resolved and interactive prompting is allowed, the CLI will prompt for it.
+  5. If the type is still missing and `--no-prompt` (or `prompt: false`) is in effect, the CLI will fail with a helpful error.
+
+- Validation: when a configuration source provides both `types[]` and `defaultType`, the `defaultType` must match one of the declared `types[].value`. If it does not, configuration validation will surface an error.
+
+- Interactive prompts: when `types[]` are present in the chosen project config, those entries are exposed as choices to the interactive `type` select prompt so users see and can pick project-defined types.
 
 To remove the pattern from Git config:
 
@@ -212,13 +244,6 @@ git config --unset --local new-branch.pattern
 # Remove from global config
 git config --unset --global new-branch.pattern
 ```
-
-When using Git config, the resolution order becomes:
-
-1. CLI flags
-2. `package.json` configuration
-3. Git config (`new-branch.pattern`)
-4. Interactive prompt (if enabled)
 
 ---
 
