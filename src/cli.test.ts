@@ -57,6 +57,11 @@ vi.mock("@/didactic/explain.js", () => ({
   explain: (...args: unknown[]) => explainMock(...args),
 }));
 
+const runInitMock = vi.fn();
+vi.mock("@/init/runInit.js", () => ({
+  runInit: (...args: unknown[]) => runInitMock(...args),
+}));
+
 const sanitizeGitRefMock = vi.fn();
 vi.mock("@/git/sanitizeGitRef.js", () => ({
   sanitizeGitRef: (...args: unknown[]) => sanitizeGitRefMock(...args),
@@ -192,6 +197,34 @@ describe("cli.ts (run)", () => {
     expect(renderPatternMock).not.toHaveBeenCalled();
     expect(logSpy).not.toHaveBeenCalled();
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("delegates to runInit when argv starts with 'init'", async () => {
+    setArgv(["init"]);
+    runInitMock.mockResolvedValue(undefined);
+
+    await run();
+
+    expect(runInitMock).toHaveBeenCalledWith({ yes: false });
+    expect(parseArgsMock).not.toHaveBeenCalled();
+  });
+
+  it("passes --yes flag to runInit", async () => {
+    setArgv(["init", "--yes"]);
+    runInitMock.mockResolvedValue(undefined);
+
+    await run();
+
+    expect(runInitMock).toHaveBeenCalledWith({ yes: true });
+  });
+
+  it("passes -y flag to runInit", async () => {
+    setArgv(["init", "-y"]);
+    runInitMock.mockResolvedValue(undefined);
+
+    await run();
+
+    expect(runInitMock).toHaveBeenCalledWith({ yes: true });
   });
 
   it("uses CLI --pattern over package.json config and prints branch name", async () => {
