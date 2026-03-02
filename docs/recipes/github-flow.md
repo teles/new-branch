@@ -23,15 +23,15 @@
 
 ```bash
 # Feature work
-new-branch --title "Add user dashboard" --id PROJ-123 --create
+npx new-branch --title "Add user dashboard" --id PROJ-123 --create
 # → feat/add-user-dashboard-PROJ-123
 
 # Bug fix
-new-branch --type fix --title "Login crash on Safari" --id PROJ-456 --create
+npx new-branch --type fix --title "Login crash on Safari" --id PROJ-456 --create
 # → fix/login-crash-on-safari-PROJ-456
 
 # Quick chore
-new-branch --type chore --title "Update dependencies" --create
+npx new-branch --type chore --title "Update dependencies" --create
 # → chore/update-dependencies
 ```
 
@@ -56,10 +56,10 @@ For teams that also need release branches:
 
 ```bash
 # Normal feature work
-new-branch --title "Add search" --id PROJ-789 --create
+npx new-branch --title "Add search" --id PROJ-789 --create
 
 # Release branch
-new-branch --use release --title "v2.1" --create
+npx new-branch --use release --title "v2.1" --create
 # → release/2026-02-28-v2-1
 ```
 

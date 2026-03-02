@@ -32,19 +32,19 @@ npm install -g new-branch
 Bootstrap a `.newbranchrc.json` config interactively:
 
 ```bash
-new-branch init
+npx new-branch init
 ```
 
 Or accept all defaults in one shot:
 
 ```bash
-new-branch init --yes
+npx new-branch init --yes
 ```
 
 Then generate branch names:
 
 ```bash
-new-branch \
+npx new-branch \
   --type feat \
   --title "Add login page" \
   --id PROJ-123 \

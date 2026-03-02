@@ -28,23 +28,23 @@
 
 ```bash
 # Feature branch (from develop)
-new-branch --use feature --title "User authentication" --id PROJ-123 --create
+npx new-branch --use feature --title "User authentication" --id PROJ-123 --create
 # → feature/user-authentication-PROJ-123
 
 # Bugfix (from develop)
-new-branch --use bugfix --title "Fix search filter" --id PROJ-456 --create
+npx new-branch --use bugfix --title "Fix search filter" --id PROJ-456 --create
 # → bugfix/fix-search-filter-PROJ-456
 
 # Hotfix (from main)
-new-branch --use hotfix --title "Fix payment crash" --id PROJ-789 --create
+npx new-branch --use hotfix --title "Fix payment crash" --id PROJ-789 --create
 # → hotfix/2026-02-28-fix-payment-crash-PROJ-789
 
 # Release branch
-new-branch --use release --title "v2.0.0" --create
+npx new-branch --use release --title "v2.0.0" --create
 # → release/v2-0-0
 
 # Support branch
-new-branch --use support --title "v1.x" --create
+npx new-branch --use support --title "v1.x" --create
 # → support/v1-x
 ```
 

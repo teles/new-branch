@@ -5,8 +5,8 @@ Complete reference for all `new-branch` command-line options.
 ## Usage
 
 ```bash
-new-branch [options]
-new-branch init [--yes]
+npx new-branch [options]
+npx new-branch init [--yes]
 ```
 
 Also available as git subcommands:
@@ -63,7 +63,7 @@ git nb [options]
 ### Generate a branch name
 
 ```bash
-new-branch \
+npx new-branch \
   --pattern "{type}/{title:slugify}-{id}" \
   --type feat \
   --title "Add login" \
@@ -77,7 +77,7 @@ feat/add-login-PROJ-123
 ### Create branch from a named alias
 
 ```bash
-new-branch --use hotfix --title "Fix crash" --id PROJ-456 --create
+npx new-branch --use hotfix --title "Fix crash" --id PROJ-456 --create
 ```
 
 ```
@@ -87,7 +87,7 @@ new-branch --use hotfix --title "Fix crash" --id PROJ-456 --create
 ### Generate quietly (for scripts)
 
 ```bash
-BRANCH=$(new-branch \
+BRANCH=$(npx new-branch \
   --pattern "{type}/{title:slugify}-{id}" \
   --type feat \
   --title "My task" \
@@ -101,7 +101,7 @@ git checkout -b "$BRANCH"
 ### Limit branch name length
 
 ```bash
-new-branch \
+npx new-branch \
   --pattern "{type}/{title:slugify}-{id}" \
   --type feat \
   --title "Implement user authentication flow" \
@@ -116,7 +116,7 @@ feat/implement-user-authentica
 ### Inspect the pipeline
 
 ```bash
-new-branch \
+npx new-branch \
   --pattern "{type}/{title:slugify;max:25}-{id}" \
   --type feat \
   --title "Implement user authentication" \

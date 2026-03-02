@@ -25,7 +25,7 @@ Higher-precedence sources **override** lower ones entirely. Configuration is **n
 CLI flags always take the highest precedence:
 
 ```bash
-new-branch --pattern "{type}/{title:slugify}-{id}" --type feat
+npx new-branch --pattern "{type}/{title:slugify}-{id}" --type feat
 ```
 
 ### `.newbranchrc.json`
@@ -171,7 +171,7 @@ The `type` variable follows a specific resolution order:
 Use `--print-config` to see the resolved configuration and its source:
 
 ```bash
-new-branch --print-config
+npx new-branch --print-config
 ```
 
 This shows which configuration source was selected and its full contents.

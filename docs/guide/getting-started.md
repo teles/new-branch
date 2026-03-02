@@ -31,9 +31,15 @@ yarn global add new-branch
 After installing globally, you can use any of these aliases:
 
 ```bash
-new-branch    # full name
+new-branch     # full name
 git new-branch # as a git subcommand
 git nb         # short alias
+```
+
+Or use without installation via `npx`:
+
+```bash
+npx new-branch # run without installing
 ```
 
 ::: tip
@@ -45,7 +51,7 @@ When installed globally, `git-new-branch` and `git-nb` are automatically availab
 Generate a branch name by providing a pattern and values:
 
 ```bash
-new-branch \
+npx new-branch \
   --pattern "{type}/{title:slugify}-{id}" \
   --type feat \
   --title "Add login page" \
@@ -63,7 +69,7 @@ feat/add-login-page-PROJ-123
 Add `--create` to actually create and switch to the branch:
 
 ```bash
-new-branch \
+npx new-branch \
   --pattern "{type}/{title:slugify}-{id}" \
   --type feat \
   --title "Add login page" \
@@ -82,14 +88,14 @@ Output:
 If you omit values that the pattern needs, the CLI will prompt you interactively:
 
 ```bash
-new-branch --pattern "{type}/{title:slugify}-{id}"
+npx new-branch --pattern "{type}/{title:slugify}-{id}"
 # → Prompts for type, title, and id
 ```
 
 Disable prompting (useful for CI) with `--no-prompt`:
 
 ```bash
-new-branch --pattern "{type}/{title:slugify}-{id}" --no-prompt
+npx new-branch --pattern "{type}/{title:slugify}-{id}" --no-prompt
 # → Fails with an error listing missing values
 ```
 
@@ -98,7 +104,7 @@ new-branch --pattern "{type}/{title:slugify}-{id}" --no-prompt
 Instead of creating a config file manually, use the **init wizard**:
 
 ```bash
-new-branch init
+npx new-branch init
 ```
 
 The wizard walks you through selecting variables, transforms, branch types, and pattern aliases — with a **live preview** at each step. It writes a `.newbranchrc.json` file when you're done.
@@ -106,7 +112,7 @@ The wizard walks you through selecting variables, transforms, branch types, and 
 For CI or quick setup, accept all defaults:
 
 ```bash
-new-branch init --yes
+npx new-branch init --yes
 ```
 
 Learn more in the [Init Wizard](/guide/init) guide.
@@ -145,7 +151,7 @@ git config new-branch.pattern "{type}/{title:slugify}-{id}"
 Now you can simply run:
 
 ```bash
-new-branch --type feat --title "Add login page" --id PROJ-123
+npx new-branch --type feat --title "Add login page" --id PROJ-123
 ```
 
 ## What's Next?

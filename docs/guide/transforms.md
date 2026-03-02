@@ -262,5 +262,5 @@ The second form is usually what you want.
 Use `--list-transforms` to see all available transforms in your terminal:
 
 ```bash
-new-branch --list-transforms
+npx new-branch --list-transforms
 ```

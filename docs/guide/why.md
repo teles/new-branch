@@ -18,7 +18,7 @@ Inconsistent branch names cause real friction in software teams:
 git checkout -b feat/add-login-page-PROJ-123
 
 # ...declare a pattern and let the tool enforce it
-new-branch --pattern "{type}/{title:slugify}-{id}" --create
+npx new-branch --pattern "{type}/{title:slugify}-{id}" --create
 ```
 
 ## Design Principles
