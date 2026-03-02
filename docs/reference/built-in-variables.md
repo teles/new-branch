@@ -31,7 +31,7 @@ Derived from the local system time. Always available, never prompted.
 ### Example
 
 ```bash
-new-branch --pattern "release/{date}-{title:slugify}" --title "v2.0"
+npx new-branch --pattern "release/{date}-{title:slugify}" --title "v2.0"
 ```
 
 ```
@@ -66,7 +66,7 @@ Use the `ifEmpty` transform to provide fallback values:
 ### Example
 
 ```bash
-new-branch \
+npx new-branch \
   --pattern "{userName:kebab}/{type}/{title:slugify}-{shortSha}" \
   --type feat \
   --title "Improve logging"

@@ -8,7 +8,7 @@ When a pattern references a variable (like `{type}`, `{title}`, or `{id}`) and t
 
 ```bash
 # Only providing the pattern — will prompt for type, title, and id
-new-branch --pattern "{type}/{title:slugify}-{id}"
+npx new-branch --pattern "{type}/{title:slugify}-{id}"
 ```
 
 ```
@@ -43,7 +43,7 @@ The `label` is what the user sees in the prompt, and the `value` is what gets us
 For CI/CD environments or scripts, disable interactive prompts with `--no-prompt`:
 
 ```bash
-new-branch \
+npx new-branch \
   --pattern "{type}/{title:slugify}-{id}" \
   --type feat \
   --title "My task" \
@@ -63,7 +63,7 @@ You can provide some values via flags and let the CLI prompt for the rest:
 
 ```bash
 # Provides type, will prompt for title and id
-new-branch --pattern "{type}/{title:slugify}-{id}" --type feat
+npx new-branch --pattern "{type}/{title:slugify}-{id}" --type feat
 ```
 
 ## Built-in Values

@@ -7,7 +7,7 @@
 Shows a detailed breakdown of the entire branch name pipeline without creating a branch:
 
 ```bash
-new-branch \
+npx new-branch \
   --pattern "{type}/{title:slugify;max:25}-{id}" \
   --type feat \
   --title "Add user authentication module" \
@@ -27,7 +27,7 @@ The output includes:
 `--explain` is especially useful when debugging pattern aliases:
 
 ```bash
-new-branch --use hotfix --title "Fix crash" --id PROJ-456 --explain
+npx new-branch --use hotfix --title "Fix crash" --id PROJ-456 --explain
 ```
 
 The output will show `CLI --use (hotfix)` as the pattern source.
@@ -38,7 +38,7 @@ The output will show `CLI --use (hotfix)` as the pattern source.
 Lists all available transforms with their descriptions and usage examples:
 
 ```bash
-new-branch --list-transforms
+npx new-branch --list-transforms
 ```
 
 Output:
@@ -63,7 +63,7 @@ Available transforms:
 Prints the resolved project configuration and which source it came from:
 
 ```bash
-new-branch --print-config
+npx new-branch --print-config
 ```
 
 Example output:

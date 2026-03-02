@@ -5,13 +5,13 @@ The `new-branch init` command creates a `new-branch` configuration through an in
 ## Quick Start
 
 ```bash
-new-branch init
+npx new-branch init
 ```
 
 Or accept all defaults without prompting:
 
 ```bash
-new-branch init --yes
+npx new-branch init --yes
 ```
 
 ::: tip
@@ -162,7 +162,7 @@ For **git config**, values are always overwritten (git config is append/replace 
 Once your config is in place, you can generate branches without specifying a pattern:
 
 ```bash
-new-branch --type feat --title "Add login page" --id PROJ-123
+npx new-branch --type feat --title "Add login page" --id PROJ-123
 ```
 
 See [Configuration](/guide/configuration) for all config options and precedence rules.

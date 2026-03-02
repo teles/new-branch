@@ -40,7 +40,7 @@ features:
 ## Quick Example
 
 ```bash
-new-branch \
+npx new-branch \
   --pattern "{type}/{title:slugify;max:25}-{id}" \
   --type feat \
   --title "Add user authentication" \

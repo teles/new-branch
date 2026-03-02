@@ -23,7 +23,7 @@ The CLI reads configuration from the **current working directory**, so `cd` into
 
 ```bash
 cd packages/frontend
-new-branch --title "Add sidebar" --id FE-123 --create
+npx new-branch --title "Add sidebar" --id FE-123 --create
 ```
 
 ## Root Configuration with Aliases
@@ -50,19 +50,19 @@ A simpler approach: define all patterns at the root using aliases:
 
 ```bash
 # Frontend work
-new-branch --use frontend --type feat --title "Add sidebar" --id FE-123 --create
+npx new-branch --use frontend --type feat --title "Add sidebar" --id FE-123 --create
 # → fe/feat/add-sidebar-FE-123
 
 # Backend work
-new-branch --use backend --type fix --title "Fix auth timeout" --id BE-456 --create
+npx new-branch --use backend --type fix --title "Fix auth timeout" --id BE-456 --create
 # → be/fix/fix-auth-timeout-BE-456
 
 # Infrastructure
-new-branch --use infra --title "Upgrade Node to 22" --create
+npx new-branch --use infra --title "Upgrade Node to 22" --create
 # → infra/upgrade-node-to-22
 
 # Cross-cutting changes (uses default pattern)
-new-branch --type chore --title "Update ESLint config" --create
+npx new-branch --type chore --title "Update ESLint config" --create
 # → chore/update-eslint-config
 ```
 
@@ -94,11 +94,11 @@ For organizations where teams own different packages:
 
 ```bash
 # Platform team includes author name
-new-branch --use platform --type feat --title "Add caching layer" --id PLAT-789 --create
+npx new-branch --use platform --type feat --title "Add caching layer" --id PLAT-789 --create
 # → platform/john-doe/feat/add-caching-layer-PLAT-789
 
 # Mobile team uses simpler convention
-new-branch --use mobile --type fix --title "Fix scroll jank" --id MOB-321 --create
+npx new-branch --use mobile --type fix --title "Fix scroll jank" --id MOB-321 --create
 # → mobile/fix/fix-scroll-jank-MOB-321
 ```
 
