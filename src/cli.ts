@@ -33,6 +33,10 @@ import { listTransforms } from "@/didactic/listTransforms.js";
 import { printConfig } from "@/didactic/printConfig.js";
 import { explain } from "@/didactic/explain.js";
 import { runInit } from "@/init/runInit.js";
+import { parseCsp } from "@/csp/parseCsp.js";
+import { compareCsp } from "@/csp/compareCsp.js";
+import { buildMergedPolicy, exportMergedPolicy } from "@/csp/mergeCsp.js";
+import { formatCspDiff, formatCspDiffLegend } from "@/csp/formatCspDiff.js";
 
 /**
  * Success variant of the {@link Result} union.
@@ -195,6 +199,37 @@ export async function run(): Promise<void> {
     const initArgv = argv.slice(initIdx + 1);
     const yes = initArgv.includes("--yes") || initArgv.includes("-y");
     await runInit({ yes });
+    return;
+  }
+
+  // --- Subcommand: compare <csp1> <csp2> ---
+  // Compare two Content Security Policy strings and display a diff.
+  const compareIdx = argv.indexOf("compare");
+  if (compareIdx !== -1) {
+    const compareArgv = argv.slice(compareIdx + 1).filter((a) => !a.startsWith("-"));
+    const csp1Str = compareArgv[0];
+    const csp2Str = compareArgv[1];
+
+    if (!csp1Str || !csp2Str) {
+      fail(
+        'Usage: new-branch compare "<csp1>" "<csp2>"\n\n' +
+          "  Provide two Content Security Policy strings to compare.",
+      );
+    }
+
+    const csp1 = parseCsp(csp1Str);
+    const csp2 = parseCsp(csp2Str);
+    const diff = compareCsp(csp1, csp2);
+    const merged = buildMergedPolicy(diff);
+    const exported = exportMergedPolicy(merged);
+
+    console.log("\nCSP Diff\n");
+    console.log(formatCspDiffLegend());
+    console.log();
+    console.log(formatCspDiff(diff));
+    console.log("\nMerged CSP (CSP 2 with removed entries disabled):\n");
+    console.log(`  ${exported || "(empty)"}`);
+
     return;
   }
 
