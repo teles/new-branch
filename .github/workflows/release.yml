@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 # Prevent two release runs from racing each other (e.g., double-push / re-run)
 concurrency:
@@ -11,8 +12,6 @@ concurrency:
 
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
   id-token: write
 
 jobs:
@@ -29,6 +28,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
+          registry-url: https://registry.npmjs.org
 
       # npm >= 9 supports provenance; keeping this to avoid runner/npm drift
       - name: Upgrade npm CLI (Trusted Publishing / provenance)
@@ -62,11 +62,17 @@ jobs:
       - name: Build
         run: pnpm build
 
-      # Publish + GitHub release via semantic-release (OIDC Trusted Publishing)
-      - name: Release
+      - name: Configure Git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Release with zero-release
+        uses: teles/zero-release@v1
+        id: release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
           NPM_CONFIG_PROVENANCE: true
-          NPM_CONFIG_ACCESS: public
-        run: pnpm semantic-release
+          ZERO_RELEASE_NPM_ACCESS: public
+        with:
+          branches: main
+          plugins: release-notes,changelog,package-json,git-commit,npm

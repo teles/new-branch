@@ -1,3 +1,13 @@
+## [0.9.0](https://github.com/teles/new-branch/compare/v0.8.1...v0.9.0) (2026-02-28)
+
+
+### Features
+
+* **init:** add interactive init wizard orchestrator ([1b9b5bb](https://github.com/teles/new-branch/commit/1b9b5bb09a729f99135f44a78ceb41e3388a26e4)), closes [#23](https://github.com/teles/new-branch/issues/23)
+* **init:** add wizard defaults and live preview modules ([a051873](https://github.com/teles/new-branch/commit/a05187387c42b60d32ff4de8d9eca9a1cd5a5ed8)), closes [#23](https://github.com/teles/new-branch/issues/23)
+* **init:** support writing config to .newbranchrc.json, package.json, or git config ([cbf44d0](https://github.com/teles/new-branch/commit/cbf44d09e751f156cac9247e607c44c98a54e872)), closes [#23](https://github.com/teles/new-branch/issues/23)
+* **init:** wire init subcommand into CLI entry point ([948e180](https://github.com/teles/new-branch/commit/948e1803b84196a23737a15133f322844823eb16)), closes [#23](https://github.com/teles/new-branch/issues/23)
+
 ## [0.8.1](https://github.com/teles/new-branch/compare/v0.8.0...v0.8.1) (2026-02-28)
 
 
